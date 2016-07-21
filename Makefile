@@ -5,7 +5,7 @@ OBJS_FULL = $(addprefix $(OBJ_DIR), $(OBJS))
 # Compiler
 CC = gcc
 # Compiler flags
-CFLAGS = -Wall -Werror -Isrc/include/ 
+CFLAGS = -std=c11 -Wall -Werror -Isrc/include/ 
 # Optimization flags
 OPT_FLAGS = -O2 -flto
 # Linker flags
