@@ -22,8 +22,10 @@ const rgba_color NES_PALETTE[64] = {
     {160,214,228,255}, {160,162,160,255}, {  0,  0,  0,  0}, {  0,  0,  0,  0},
 };
 
-const size_t hole_order[16] = {15, 2, 3, 7, 1, 6, 12, 10, 0, 13, 4, 11, 5, 9, 8, 14};
-const size_t nibble_popcount[16] = {0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4};
+const size_t hole_order[16] = 
+    {15, 2, 3, 7, 1, 6, 12, 10, 0, 13, 4, 11, 5, 9, 8, 14};
+const size_t nibble_popcount[16] = 
+    {0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4};
 // FIXME: Hacky, normalize slopes
 const size_t slope_order[16] = {0, 2, 3, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
@@ -52,8 +54,6 @@ void render_table(SDL_Renderer* renderer, table_tiles* tiles,
     for (size_t i = 1; i < TABLE_MAX_X - 1; i++) {
         for (size_t j = 1; j < TABLE_MAX_Y - 1; j++) {
             u8 tile = tiles->tiles[j][i];
-            if (!tile)
-                continue;
             SDL_Rect dest = {i * 16, j * 16, 16, 16};
             size_t hole = hole_order[tile >> 4];
             if (hole != 15)
@@ -61,7 +61,8 @@ void render_table(SDL_Renderer* renderer, table_tiles* tiles,
             size_t block = tile & TILE_MASK_BLOCK;
             if (block) {
                 if (nibble_popcount[block] == 1) {
-                    SDL_RenderCopy(renderer, sprites->slopes[slope_order[block] + 16], NULL, &dest);
+                    SDL_Texture* tte = sprites->slopes[slope_order[block] + 16];
+                    SDL_RenderCopy(renderer, tte, NULL, &dest);
                 } else {
                     SDL_RenderCopy(renderer, sprites->blocks[2], NULL, &dest);
                 }

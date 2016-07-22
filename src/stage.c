@@ -96,7 +96,7 @@ void tile_table_line(table_tiles* tiles, table_line* line) {
             tiles->tiles[j][x] |= TILE_MASK_BLOCK;
     } else {
         // FIXME: Hacky, normalize slopes
-        static const u8 BLOCK_TABLE[8] = {0x8, 0xF, 0x4, 0xF, 0x1, 0xF, 0x2, 0xF};
+        const u8 BLOCK_TABLE[8] = {0x8, 0xF, 0x4, 0xF, 0x1, 0xF, 0x2, 0xF};
         u8 tile = BLOCK_TABLE[line->y >> 5];
         if (line->end > y)
             for (size_t j = x, k = y; k <= line->end; j++, k++)

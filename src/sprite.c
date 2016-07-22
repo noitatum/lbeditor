@@ -79,14 +79,14 @@ void sprites_tiles_init(SDL_Renderer* renderer, FILE* rom,
 lb_sprites* sprites_init(SDL_Renderer* renderer, FILE* rom) {
     lb_sprites* sprites = (lb_sprites*) malloc(sizeof(lb_sprites));
     ppu_palette colors[ROM_PALETTE_BALL_SIZE];
-    rgba_palette palettes[ROM_PALETTE_BALL_SIZE];
+    rgba_palette pals[ROM_PALETTE_BALL_SIZE];
     fseek(rom, ROM_PALETTE_BALL_OFFSET, SEEK_SET);
     fread(colors, sizeof(colors), 1, rom);
     for (size_t i = 0; i < 4; i++)
-        palettes[i] = ppu_to_rgba(colors[i]); 
+        pals[i] = ppu_to_rgba(colors[i]); 
     fseek(rom, ROM_PPU_OFFSET, SEEK_SET);
     for (size_t i = 0; i < SPRITE_BALL_COUNT; i++)
-        sprites->balls[i] = create_texture_ball(renderer, rom, palettes[i >> 1]);
+        sprites->balls[i] = create_texture_ball(renderer, rom, pals[i >> 1]);
     fseek(rom, ROM_PPU_OFFSET + PPU_LETTERS_OFFSET, SEEK_SET);
     sprites_tiles_init(renderer, rom, sprites->letters, SPRITE_RIGHT_COUNT);
     return sprites;
