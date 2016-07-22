@@ -36,8 +36,11 @@ int context_init(sdl_context* c) {
     // Try to initialize the renderer of the window
     c->renderer = SDL_CreateRenderer(c->window, -1, SDL_RENDERER_ACCELERATED);
     SDL_RET_IF_NULL(c->renderer);
-    SDL_RenderClear(c->renderer);
     SDL_SetRenderDrawBlendMode(c->renderer, SDL_BLENDMODE_BLEND);
+    // FIXME: Why is this needed? 
+    // First sprite won't load properly without drawing a non transparent point
+    SDL_SetRenderDrawColor(c->renderer, 255, 255, 255, 255);
+    SDL_RenderDrawPoint(c->renderer, 0, 0);
     return 0;
 }
 
@@ -57,20 +60,20 @@ int main(int argc, char* argv[]) {
     init_table_tiles(&tiles, stages->tables);
     SDL_SetRenderTarget(renderer, NULL);
     SDL_Event e = {0};
-    SDL_Rect dest = {0};
-    size_t i = 0;
+    size_t i = 0, stage = 0;
     while (e.type != SDL_QUIT) {
         SDL_RenderPresent(renderer);
         render_table(renderer, &tiles, sprites); 
-        SDL_RenderCopy(renderer, sprites->balls[7], NULL, &dest);
+        render_balls(renderer, stages->balls[stage], sprites);
         while (SDL_PollEvent(&e)) {
             if (e.type == SDL_QUIT)
                 break;
-            if (e.type == SDL_MOUSEMOTION)
-                dest = (SDL_Rect) {e.motion.x & -16, e.motion.y & -16, 32, 32};
             if (e.type == SDL_MOUSEBUTTONDOWN) {
                 i++;
-                init_table_tiles(&tiles, stages->tables + i % TABLE_COUNT);
+                if (i >= STAGE_COUNT)
+                    i = 0;
+                stage = stages->order[i] - 1;
+                init_table_tiles(&tiles, stages->tables + stage % TABLE_COUNT);
             }
         }
     }
