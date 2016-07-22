@@ -11,15 +11,8 @@
 #define BALL_COUNT      8
 #define TABLE_MAX_X     0x20
 #define TABLE_MAX_Y     0x20
-
-#define TILE_FLAG_BLOCK        0x10
-#define TILE_FLAG_HOLE         0x20
-#define TILE_FLAG_BACK         0x40
-#define TILE_SLOPE_SE          0x00
-#define TILE_SLOPE_SW          0x01
-#define TILE_SLOPE_NW          0x02
-#define TILE_SLOPE_NE          0x03
-#define TILE_BLOCK             0x04
+#define TILE_MASK_BLOCK 0x000F
+#define TILE_FLAG_BACK  0x0100
 
 typedef struct position {
     u8 x, y;
@@ -51,7 +44,7 @@ typedef struct lb_stages {
 } lb_stages; 
 
 typedef struct table_tiles {
-    u8 tiles[TABLE_MAX_Y][TABLE_MAX_X];
+    u16 tiles[TABLE_MAX_Y][TABLE_MAX_X];
 } table_tiles;
 
 lb_stages* stages_init(FILE* rom);

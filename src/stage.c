@@ -76,12 +76,8 @@ void tile_table_back(table_tiles* tiles, table_back* back) {
 
 void tile_table_hole(table_tiles* tiles, table_hole* hole) {
     for (size_t j = 0; j < 4; j++)
-        tiles->tiles[hole->y + (j >> 1)][hole->x + (j & 1)] |= TILE_FLAG_HOLE;
+        tiles->tiles[hole->y + (j >> 1)][hole->x + (j & 1)] |= 0x10 << j;
 }
-
-void set_block(table_tiles* tiles, size_t x, size_t y, u8 block) {
-    tiles->tiles[y][x] = block | TILE_FLAG_BLOCK;
-} 
 
 void tile_table_line(table_tiles* tiles, table_line* line) {
     u8 x = line->x & TABLE_POS_MASK;
@@ -89,30 +85,30 @@ void tile_table_line(table_tiles* tiles, table_line* line) {
     u8 type = line_type(line); 
     if (type == TYPE_BODY) {
         if (line->y & FLAG_BODY_SLANT) {
-            set_block(tiles, x, y, TILE_SLOPE_NW);
-            set_block(tiles, x + 1, y, TILE_SLOPE_NE);
-            set_block(tiles, x, y + 1, TILE_SLOPE_SW);
-            set_block(tiles, x + 1, y + 1, TILE_SLOPE_SE);
+            for (size_t j = 0; j < 4; j++)
+                tiles->tiles[y + (j >> 1)][x + (j & 1)] |= 1 << j;
         } else {
             if (line->y & FLAG_BODY_BLOCK)
-                set_block(tiles, x, y, TILE_BLOCK);
+                tiles->tiles[y][x] |= TILE_MASK_BLOCK;
             else
                 for (size_t j = 0; j < 4; j++)
-                    set_block(tiles, x + (j & 1), y + (j >> 1), TILE_BLOCK);
+                    tiles->tiles[y + (j >> 1)][x + (j & 1)] |= TILE_MASK_BLOCK;
         }
     } else if (type == TYPE_HORIZONTAL) {
         for (size_t j = x; j <= line->end; j++)
-            set_block(tiles, j, y, TILE_BLOCK);
+            tiles->tiles[y][j] |= TILE_MASK_BLOCK;
     } else if (type == TYPE_VERTICAL) {
         for (size_t j = y; j <= line->end; j++)
-            set_block(tiles, x, j, TILE_BLOCK);
+            tiles->tiles[j][x] |= TILE_MASK_BLOCK;
     } else {
+        static const u8 BLOCK_TABLE[8] = {0x8, 0xF, 0x4, 0xF, 0x1, 0xF, 0x2, 0xF};
+        u8 tile = BLOCK_TABLE[line->y >> 5];
         if (line->end > y)
             for (size_t j = x, k = y; k <= line->end; j++, k++)
-                set_block(tiles, j, k, line->y >> 5);
+                tiles->tiles[k][j] |= tile; 
         else
             for (size_t j = x, k = y; k >= line->end; j++, k--)
-                set_block(tiles, j, k, line->y >> 5);
+                tiles->tiles[k][j] |= tile; 
     }
 }
 

@@ -22,6 +22,8 @@ const rgba_color NES_PALETTE[64] = {
     {160,214,228,255}, {160,162,160,255}, {  0,  0,  0,  0}, {  0,  0,  0,  0},
 };
 
+const size_t hole_order[16] = {15, 2, 3, 7, 1, 6, 12, 10, 0, 13, 4, 11, 5, 9, 8, 14};
+
 rgba_color get_color(u8 color) { 
     return NES_PALETTE[color & 0x3F];
 }
@@ -36,15 +38,16 @@ void render_table(SDL_Renderer* renderer, table_tiles* tiles,
     SDL_RenderClear(renderer);
     for (size_t i = 1; i < TABLE_MAX_X - 1; i++) {
         for (size_t j = 1; j < TABLE_MAX_Y - 1; j++) {
-            u8 tile = tiles->tiles[j][i];
+            u16 tile = tiles->tiles[j][i];
             if (!tile)
                 continue;
             SDL_Rect dest = {i * 16, j * 16, 16, 16};
             if (tile & TILE_FLAG_BACK) 
                 SDL_RenderCopy(renderer, sprites->blocks[0], NULL, &dest); 
-            if (tile & TILE_FLAG_HOLE)
-                SDL_RenderCopy(renderer, sprites->holes[0], NULL, &dest);
-            if (tile & TILE_FLAG_BLOCK)
+            size_t hole = hole_order[(tile >> 4) & 0xF];
+            if (hole != 15)
+                SDL_RenderCopy(renderer, sprites->holes[hole], NULL, &dest);
+            if (tile & TILE_MASK_BLOCK)
                 SDL_RenderCopy(renderer, sprites->blocks[2], NULL, &dest);
         }
     }
