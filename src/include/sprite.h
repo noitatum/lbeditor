@@ -3,12 +3,13 @@
 #include <SDL2/SDL.h>
 #include <stdio.h>
 
-#define SPRITE_BALL_COUNT 8
-#define SPRITE_LETTER_COUNT 96
-#define SPRITE_BLOCK_COUNT 48
-#define SPRITE_SLOPE_COUNT 20
-#define SPRITE_HOLE_COUNT 20
-#define SPRITE_MOON_COUNT 8
+#define SPRITE_BALL_COUNT   0x08
+#define SPRITE_LETTER_COUNT 0x60
+#define SPRITE_BLOCK_COUNT  0x30
+#define SPRITE_SLOPE_COUNT  0x14
+#define SPRITE_HOLE_COUNT   0x14
+#define SPRITE_MOON_COUNT   0x08
+#define SPRITE_RIGHT_COUNT  0xC0
 
 typedef struct lb_sprites {
     SDL_Texture* balls[SPRITE_BALL_COUNT];

@@ -88,11 +88,7 @@ lb_sprites* sprites_init(SDL_Renderer* renderer, FILE* rom) {
     for (size_t i = 0; i < SPRITE_BALL_COUNT; i++)
         sprites->balls[i] = create_texture_ball(renderer, rom, palettes[i >> 1]);
     fseek(rom, ROM_PPU_OFFSET + PPU_LETTERS_OFFSET, SEEK_SET);
-    sprites_tiles_init(renderer, rom, sprites->letters, SPRITE_LETTER_COUNT);
-    sprites_tiles_init(renderer, rom, sprites->blocks, SPRITE_BLOCK_COUNT);
-    sprites_tiles_init(renderer, rom, sprites->slopes, SPRITE_SLOPE_COUNT);
-    sprites_tiles_init(renderer, rom, sprites->holes, SPRITE_HOLE_COUNT);
-    sprites_tiles_init(renderer, rom, sprites->moons, SPRITE_MOON_COUNT);
+    sprites_tiles_init(renderer, rom, sprites->letters, SPRITE_RIGHT_COUNT);
     return sprites;
 }
 
