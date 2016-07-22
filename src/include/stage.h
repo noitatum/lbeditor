@@ -6,13 +6,12 @@
 #define STAGE_COUNT     60
 #define TABLE_COUNT     30
 #define TABLE_MAX_LINES 256
-#define TABLE_MAX_BACKS 256
+#define TABLE_MAX_BACKS 32
 #define TABLE_MAX_HOLES 256
 #define BALL_COUNT      8
 #define TABLE_MAX_X     0x20
 #define TABLE_MAX_Y     0x20
-#define TILE_MASK_BLOCK 0x000F
-#define TILE_FLAG_BACK  0x0100
+#define TILE_MASK_BLOCK 0x0F
 
 typedef struct position {
     u8 x, y;
@@ -31,10 +30,10 @@ typedef struct table_hole {
 } table_hole;
 
 typedef struct table_full {
+    size_t line_count, back_count, hole_count;
     table_line lines[TABLE_MAX_LINES];
     table_back backs[TABLE_MAX_BACKS];
     table_hole holes[TABLE_MAX_HOLES];
-    size_t line_count, back_count, hole_count;
 } table_full;
 
 typedef struct lb_stages {
@@ -44,7 +43,7 @@ typedef struct lb_stages {
 } lb_stages; 
 
 typedef struct table_tiles {
-    u16 tiles[TABLE_MAX_Y][TABLE_MAX_X];
+    u8 tiles[TABLE_MAX_Y][TABLE_MAX_X];
 } table_tiles;
 
 lb_stages* stages_init(FILE* rom);

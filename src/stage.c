@@ -68,12 +68,6 @@ lb_stages* stages_init(FILE* rom) {
     return stages;
 }
 
-void tile_table_back(table_tiles* tiles, table_back* back) {
-    for (size_t i = back->x1; i <= back->x2; i++)
-        for (size_t j = back->y1; j <= back->y2; j++)
-            tiles->tiles[j][i] |= TILE_FLAG_BACK; 
-}
-
 void tile_table_hole(table_tiles* tiles, table_hole* hole) {
     for (size_t j = 0; j < 4; j++)
         tiles->tiles[hole->y + (j >> 1)][hole->x + (j & 1)] |= 0x10 << j;
@@ -101,6 +95,7 @@ void tile_table_line(table_tiles* tiles, table_line* line) {
         for (size_t j = y; j <= line->end; j++)
             tiles->tiles[j][x] |= TILE_MASK_BLOCK;
     } else {
+        // FIXME: Hacky, normalize slopes
         static const u8 BLOCK_TABLE[8] = {0x8, 0xF, 0x4, 0xF, 0x1, 0xF, 0x2, 0xF};
         u8 tile = BLOCK_TABLE[line->y >> 5];
         if (line->end > y)
@@ -116,8 +111,6 @@ void init_table_tiles(table_tiles* tiles, table_full* table) {
     memset(tiles, 0, sizeof(*tiles));
     for (size_t i = 0; i < table->line_count; i++)
         tile_table_line(tiles, table->lines + i);
-    for (size_t i = 0; i < table->back_count; i++)
-        tile_table_back(tiles, table->backs + i);
     for (size_t i = 0; i < table->hole_count; i++)
         tile_table_hole(tiles, table->holes + i);
 }

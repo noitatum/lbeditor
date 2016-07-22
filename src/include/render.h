@@ -9,6 +9,7 @@ typedef struct rgba_color {
     u8 r, g, b, a;
 } rgba_color;
 
+void render_back(SDL_Renderer* renderer, table_full* table);
 void render_table(SDL_Renderer* renderer, table_tiles* tiles, 
                   lb_sprites* sprites); 
 void render_balls(SDL_Renderer* renderer, position* balls, lb_sprites* sprites);

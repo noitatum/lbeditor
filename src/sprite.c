@@ -71,7 +71,7 @@ SDL_Texture* create_texture_ball(SDL_Renderer* renderer, FILE* rom,
 
 void sprites_tiles_init(SDL_Renderer* renderer, FILE* rom, 
                        SDL_Texture** textures, size_t count) {
-    const ppu_palette colors = {{0x1D, 0x30, 0x00, 0x09}};
+    const ppu_palette colors = {{0x1D, 0x30, 0x00, 0x3F}};
     for (size_t i = 0; i < count; i++)
         textures[i] = create_texture_tile(renderer, rom, ppu_to_rgba(colors));
 }

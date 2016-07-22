@@ -61,8 +61,10 @@ int main(int argc, char* argv[]) {
     SDL_SetRenderTarget(renderer, NULL);
     SDL_Event e = {0};
     size_t i = 0, stage = 0;
+    table_full* table = stages->tables;
     while (e.type != SDL_QUIT) {
         SDL_RenderPresent(renderer);
+        render_back(renderer, table);
         render_table(renderer, &tiles, sprites); 
         render_balls(renderer, stages->balls[stage], sprites);
         while (SDL_PollEvent(&e)) {
@@ -73,7 +75,8 @@ int main(int argc, char* argv[]) {
                 if (i >= STAGE_COUNT)
                     i = 0;
                 stage = stages->order[i] - 1;
-                init_table_tiles(&tiles, stages->tables + stage % TABLE_COUNT);
+                table = stages->tables + stage % TABLE_COUNT;
+                init_table_tiles(&tiles, table); 
             }
         }
     }
