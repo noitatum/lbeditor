@@ -44,6 +44,17 @@ int context_init(sdl_context* c) {
     return 0;
 }
 
+void show_stage(SDL_Renderer* renderer, size_t stage, lb_sprites* sprites,
+                  lb_stages* stages, table_tiles* tiles) {
+    size_t index = stages->order[stage] - 1;
+    table_full* table = stages->tables + index % TABLE_COUNT;
+    init_table_tiles(tiles, table);
+    render_back(renderer, table);
+    render_table(renderer, tiles, sprites); 
+    render_balls(renderer, stages->balls[index], sprites);
+    SDL_RenderPresent(renderer);
+}
+
 int main(int argc, char* argv[]) {
     RET_IF_TRUE(argc != 2, "Usage moon-editor <Lunar Ball Rom>\n");
     FILE* rom = fopen(argv[1], "r");
@@ -57,27 +68,17 @@ int main(int argc, char* argv[]) {
     lb_sprites* sprites = sprites_init(renderer, rom);
     lb_stages* stages = stages_init(rom);
     table_tiles tiles;
-    init_table_tiles(&tiles, stages->tables);
-    SDL_SetRenderTarget(renderer, NULL);
+    size_t i = 0;
     SDL_Event e = {0};
-    size_t i = 0, stage = 0;
-    table_full* table = stages->tables;
+    SDL_SetRenderTarget(renderer, NULL);
+    show_stage(renderer, i, sprites, stages, &tiles);
     while (e.type != SDL_QUIT) {
-        SDL_RenderPresent(renderer);
-        render_back(renderer, table);
-        render_table(renderer, &tiles, sprites); 
-        render_balls(renderer, stages->balls[stage], sprites);
-        while (SDL_PollEvent(&e)) {
-            if (e.type == SDL_QUIT)
-                break;
-            if (e.type == SDL_MOUSEBUTTONDOWN) {
-                i++;
-                if (i >= STAGE_COUNT)
-                    i = 0;
-                stage = stages->order[i] - 1;
-                table = stages->tables + stage % TABLE_COUNT;
-                init_table_tiles(&tiles, table); 
-            }
+        SDL_WaitEvent(&e);
+        if (e.type == SDL_MOUSEBUTTONDOWN) {
+            i++;
+            if (i >= STAGE_COUNT)
+                i = 0;
+            show_stage(renderer, i, sprites, stages, &tiles);
         }
     }
     sprites_destroy(sprites);
