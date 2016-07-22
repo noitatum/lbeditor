@@ -93,15 +93,7 @@ lb_sprites* sprites_init(SDL_Renderer* renderer, FILE* rom) {
 }
 
 void sprites_destroy(lb_sprites* sprites) {
-    for (size_t i = 0; i < SPRITE_BALL_COUNT; i++)
-        SDL_DestroyTexture(sprites->balls[i]);
-    for (size_t i = 0; i < SPRITE_BLOCK_COUNT; i++)
-        SDL_DestroyTexture(sprites->blocks[i]);
-    for (size_t i = 0; i < SPRITE_SLOPE_COUNT; i++)
-        SDL_DestroyTexture(sprites->slopes[i]);
-    for (size_t i = 0; i < SPRITE_HOLE_COUNT; i++)
-        SDL_DestroyTexture(sprites->holes[i]);
-    for (size_t i = 0; i < SPRITE_MOON_COUNT; i++)
-        SDL_DestroyTexture(sprites->moons[i]);
+    for (size_t i = 0; i < SPRITE_BALL_COUNT + SPRITE_RIGHT_COUNT; i++)
+        SDL_DestroyTexture(((SDL_Texture**) sprites)[i]);
     free(sprites);
 }
