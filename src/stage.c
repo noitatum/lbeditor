@@ -80,7 +80,7 @@ void tile_table_line(table_tiles* tiles, table_line* line) {
     if (type == TYPE_BODY) {
         if (line->y & FLAG_BODY_SLANT) {
             for (size_t j = 0; j < 4; j++)
-                tiles->tiles[y + (j >> 1)][x + (j & 1)] |= 1 << j;
+                tiles->tiles[y + (j >> 1)][x + (j & 1)] |= 3 * (4 - j);
         } else {
             if (line->y & FLAG_BODY_BLOCK)
                 tiles->tiles[y][x] |= TILE_MASK_BLOCK;
@@ -95,9 +95,8 @@ void tile_table_line(table_tiles* tiles, table_line* line) {
         for (size_t j = y; j <= line->end; j++)
             tiles->tiles[j][x] |= TILE_MASK_BLOCK;
     } else {
-        // FIXME: Hacky, normalize slopes
-        const u8 BLOCK_TABLE[8] = {0x8, 0xF, 0x4, 0xF, 0x1, 0xF, 0x2, 0xF};
-        u8 tile = BLOCK_TABLE[line->y >> 5];
+        static const u8 SLOPE_TABLE[4] = {0x03, 0x06, 0x0C, 0x09};
+        u8 tile = line->y & 0x20 ? TILE_MASK_BLOCK : SLOPE_TABLE[line->y >> 6];
         if (line->end > y)
             for (size_t j = x, k = y; k <= line->end; j++, k++)
                 tiles->tiles[k][j] |= tile; 
@@ -107,10 +106,18 @@ void tile_table_line(table_tiles* tiles, table_line* line) {
     }
 }
 
+void fuse_slopes(table_tiles* tiles) {
+    for (size_t j = 0; j < TABLE_MAX_Y; j++)
+        for (size_t i = 0; i < TABLE_MAX_X; i++)
+            if ((tiles->tiles[j][i] & TILE_MASK_BLOCK) % 3) 
+                tiles->tiles[j][i] |= TILE_MASK_BLOCK;
+}
+
 void init_table_tiles(table_tiles* tiles, table_full* table) {
     memset(tiles, 0, sizeof(*tiles));
     for (size_t i = 0; i < table->line_count; i++)
         tile_table_line(tiles, table->lines + i);
+    fuse_slopes(tiles);
     for (size_t i = 0; i < table->hole_count; i++)
         tile_table_hole(tiles, table->holes + i);
 }

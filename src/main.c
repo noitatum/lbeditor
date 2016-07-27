@@ -52,7 +52,6 @@ void show_stage(SDL_Renderer* renderer, size_t stage, lb_sprites* sprites,
     render_back(renderer, table);
     render_table(renderer, tiles, sprites); 
     render_balls(renderer, stages->balls[index], sprites);
-    SDL_RenderPresent(renderer);
 }
 
 int main(int argc, char* argv[]) {
@@ -80,6 +79,7 @@ int main(int argc, char* argv[]) {
                 i = 0;
             show_stage(renderer, i, sprites, stages, &tiles);
         }
+        SDL_RenderPresent(renderer);
     }
     sprites_destroy(sprites);
     context_destroy(&context);
