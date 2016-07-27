@@ -3,6 +3,9 @@
 #include <stage.h>
 #include <sprite.h>
 
+#define MIN(a,b) ((a) < (b) ? (a) : (b))
+#define MAX(a,b) ((a) > (b) ? (a) : (b))
+
 const rgba_color NES_PALETTE[64] = {
     { 84, 84, 84,255}, {  0, 30,116,255}, {  8, 16,144,255}, { 48,  0,136,255},
     { 68,  0,100,255}, { 92,  0, 48,255}, { 84,  4,  0,255}, { 60, 24,  0,255},
@@ -90,12 +93,17 @@ void set_render_color(SDL_Renderer* renderer, rgba_color color) {
 }
 
 int random_tile(SDL_Rect* rect, table_tiles* tiles, size_t big) {
-    int x = rand() % (TABLE_MAX_X - 1), y = rand() % (TABLE_MAX_Y - 1);
-    for (size_t i = 0; i <= big * 3; i++)
-        if (tiles->tiles[y + (i >> 1)][x + (i & 1)])
-            return -1;
-    for (size_t i = 0; i <= big * 3; i++)
-        tiles->tiles[y + (i >> 1)][x + (i & 1)] = 1;
+    int x = rand() % (TABLE_MAX_X + 1) - 1, y = rand() % (TABLE_MAX_Y + 1) - 1;
+    size_t botx = MAX(x, 0), boty = MAX(y, 0); 
+    size_t topx = MIN(x + big + 1, TABLE_MAX_X);
+    size_t topy = MIN(y + big + 1, TABLE_MAX_Y);
+    for (size_t j = boty; j < topy; j++)
+        for (size_t i = botx; i < topx; i++)
+            if (tiles->tiles[j][i])
+                return -1;
+    for (size_t j = boty; j < topy; j++)
+        for (size_t i = botx; i < topx; i++)  
+            tiles->tiles[j][i] = 1;
     rect->x = x * TSIZE;
     rect->y = y * TSIZE;
     return 0;
