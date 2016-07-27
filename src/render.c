@@ -3,9 +3,6 @@
 #include <stage.h>
 #include <sprite.h>
 
-#define MIN(a,b) ((a) < (b) ? (a) : (b))
-#define MAX(a,b) ((a) > (b) ? (a) : (b))
-
 const rgba_color NES_PALETTE[64] = {
     { 84, 84, 84,255}, {  0, 30,116,255}, {  8, 16,144,255}, { 48,  0,136,255},
     { 68,  0,100,255}, { 92,  0, 48,255}, { 84,  4,  0,255}, { 60, 24,  0,255},
@@ -92,38 +89,37 @@ void set_render_color(SDL_Renderer* renderer, rgba_color color) {
     SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
 }
 
-int random_tile(SDL_Rect* rect, table_tiles* tiles, size_t big) {
-    int x = rand() % (TABLE_MAX_X + 1) - 1, y = rand() % (TABLE_MAX_Y + 1) - 1;
-    size_t botx = MAX(x, 0), boty = MAX(y, 0); 
-    size_t topx = MIN(x + big + 1, TABLE_MAX_X);
-    size_t topy = MIN(y + big + 1, TABLE_MAX_Y);
-    for (size_t j = boty; j < topy; j++)
-        for (size_t i = botx; i < topx; i++)
-            if (tiles->tiles[j][i])
+int random_tile(SDL_Rect* rect, size_t big, 
+                size_t size_x, size_t size_y, u8 set[size_y][size_x]) {
+    int x = rand() % (size_x - 1), y = rand() % (size_y - 1);
+    for (size_t j = y; j <= y + big; j++)
+        for (size_t i = x; i <= x + big; i++)
+            if (set[j][i])
                 return -1;
-    for (size_t j = boty; j < topy; j++)
-        for (size_t i = botx; i < topx; i++)  
-            tiles->tiles[j][i] = 1;
-    rect->x = x * TSIZE;
-    rect->y = y * TSIZE;
+    for (size_t j = y; j <= y + big; j++)
+        for (size_t i = x; i <= x + big; i++)
+            set[j][i] = 1;
+    rect->x = (x - 1) * TSIZE;
+    rect->y = (y - 1) * TSIZE;
     return 0;
 }
 
 void render_dust(SDL_Renderer* renderer, lb_sprites* sprites) {
-    table_tiles tiles;
-    memset(&tiles, 0, sizeof(tiles));
+    size_t size_x = TABLE_MAX_X + 2, size_y = TABLE_MAX_Y + 2;
+    u8 dust[size_y][size_x];
+    memset(dust, 0, sizeof(dust));
     set_render_color(renderer, NES_PALETTE[0x25]);
     SDL_RenderClear(renderer);
     SDL_Rect dest = (SDL_Rect) {0, 0, TSIZE * 2, TSIZE * 2};
     for (size_t i = 0; i < 10; i++)
-        if (!random_tile(&dest, &tiles, 1))
+        if (!random_tile(&dest, 1, size_x, size_y, dust))
             SDL_RenderCopy(renderer, sprites->crater, NULL, &dest);
     dest = (SDL_Rect) {0, 0, TSIZE, TSIZE};
     for (size_t i = 0; i < 100; i++)
-        if (!random_tile(&dest, &tiles, 0))
+        if (!random_tile(&dest, 0, size_x, size_y, dust))
             SDL_RenderCopy(renderer, sprites->dusts[rand() % 2], NULL, &dest);
     for (size_t i = 0; i < 500; i++)
-        if (!random_tile(&dest, &tiles, 0))
+        if (!random_tile(&dest, 0, size_x, size_y, dust))
             SDL_RenderCopy(renderer, sprites->dusts[3], NULL, &dest);
 }
 
