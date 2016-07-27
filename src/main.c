@@ -75,13 +75,27 @@ int main(int argc, char* argv[]) {
     render_stage(r.renderer, r.sprites, table, balls, &tiles);
     while (e.type != SDL_QUIT) {
         SDL_WaitEvent(&e);
+        if (e.type == SDL_KEYDOWN) {
+            SDL_Keycode key = e.key.keysym.sym;
+            if (key == SDLK_LEFT || key == SDLK_RIGHT) {
+                if (key == SDLK_RIGHT) {
+                    i++;
+                    if (i == STAGE_COUNT)
+                        i = 0;
+                } else {
+                    if (i == 0)
+                        i = STAGE_COUNT;
+                    i--;
+                }
+                table = get_table(r.stages, i);
+                balls = get_balls(r.stages, i);
+                init_table_tiles(&tiles, table);
+                render_stage(r.renderer, r.sprites, table, balls, &tiles);
+            }
+        } 
         if (e.type == SDL_MOUSEBUTTONDOWN) {
-            i++;
-            if (i >= STAGE_COUNT)
-                i = 0;
-            table = get_table(r.stages, i);
-            balls = get_balls(r.stages, i);
-            init_table_tiles(&tiles, table);
+            table_add_hole(table, &tiles, (e.button.x - 8) / 16, 
+                                          (e.button.y - 8) / 16);
             render_stage(r.renderer, r.sprites, table, balls, &tiles);
         }
         SDL_RenderPresent(r.renderer);
