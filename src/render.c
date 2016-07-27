@@ -89,14 +89,43 @@ void set_render_color(SDL_Renderer* renderer, rgba_color color) {
     SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
 }
 
-void render_back(SDL_Renderer* renderer, table_full* table) {
+int random_tile(SDL_Rect* rect, table_tiles* tiles, size_t big) {
+    int x = rand() % (TABLE_MAX_X - 1), y = rand() % (TABLE_MAX_Y - 1);
+    for (size_t i = 0; i <= big * 3; i++)
+        if (tiles->tiles[y + (i >> 1)][x + (i & 1)])
+            return -1;
+    for (size_t i = 0; i <= big * 3; i++)
+        tiles->tiles[y + (i >> 1)][x + (i & 1)] = 1;
+    rect->x = x * TSIZE;
+    rect->y = y * TSIZE;
+    return 0;
+}
+
+void render_dust(SDL_Renderer* renderer, lb_sprites* sprites) {
+    table_tiles tiles;
+    memset(&tiles, 0, sizeof(tiles));
     set_render_color(renderer, NES_PALETTE[0x25]);
     SDL_RenderClear(renderer);
+    SDL_Rect dest = (SDL_Rect) {0, 0, TSIZE * 2, TSIZE * 2};
+    for (size_t i = 0; i < 10; i++)
+        if (!random_tile(&dest, &tiles, 1))
+            SDL_RenderCopy(renderer, sprites->crater, NULL, &dest);
+    dest = (SDL_Rect) {0, 0, TSIZE, TSIZE};
+    for (size_t i = 0; i < 100; i++)
+        if (!random_tile(&dest, &tiles, 0))
+            SDL_RenderCopy(renderer, sprites->dusts[rand() % 2], NULL, &dest);
+    for (size_t i = 0; i < 500; i++)
+        if (!random_tile(&dest, &tiles, 0))
+            SDL_RenderCopy(renderer, sprites->dusts[3], NULL, &dest);
+}
+
+void render_back(SDL_Renderer* renderer, table_full* table) {
     set_render_color(renderer, NES_PALETTE[0x09]);
     for (size_t i = 0; i < table->back_count; i++) {
         table_back* b = table->backs + i;
-        SDL_Rect rect = {b->x1 * 16, b->y1 * 16, 
-                         (b->x2 - b->x1 + 1) * 16, (b->y2 - b->y1 + 1) * 16};
+        SDL_Rect rect = {b->x1 * TSIZE, b->y1 * TSIZE, 
+                         (b->x2 - b->x1 + 1) * TSIZE, 
+                         (b->y2 - b->y1 + 1) * TSIZE};
         SDL_RenderFillRect(renderer, &rect);
     }
 }
@@ -115,9 +144,9 @@ void render_table(SDL_Renderer* renderer, table_tiles* tiles,
     for (size_t j = 1; j < TABLE_MAX_Y - 2; j++) {
         for (size_t i = 1; i < TABLE_MAX_X - 2; i++) {
             u8 tile = tiles->tiles[j][i];
-            SDL_Rect dest = {i * 16, j * 16, 16, 16};
+            SDL_Rect dest = {i * TSIZE, j * TSIZE, TSIZE, TSIZE};
             size_t hole = hole_order[tile >> 4];
-            if (hole != 15)
+            if (hole != 0xF)
                 SDL_RenderCopy(renderer, sprites->holes[hole], NULL, &dest);
             size_t block = tile & TILE_MASK_BLOCK;
             if (!block)
@@ -136,7 +165,7 @@ void render_table(SDL_Renderer* renderer, table_tiles* tiles,
     }
 }
 
-void render_balls(SDL_Renderer* renderer, position* balls, 
+void render_balls(SDL_Renderer* renderer, stage_ball* balls, 
                   lb_sprites* sprites) {
     for (size_t i = 0; i < BALL_COUNT; i++) {
         if (balls[i].x == 0)
@@ -144,4 +173,26 @@ void render_balls(SDL_Renderer* renderer, position* balls,
         SDL_Rect dest = {balls[i].y * 2 - 16, balls[i].x * 2 - 16, 32, 32};
         SDL_RenderCopy(renderer, sprites->balls[i], NULL, &dest);
     }
+}
+
+void render_stage(SDL_Renderer* renderer, lb_sprites* sprites, 
+                  table_full* table, stage_ball* balls, table_tiles* tiles) {
+    srand((u32) (u64) table);
+    render_dust(renderer, sprites);
+    render_back(renderer, table);
+    render_table(renderer, tiles, sprites); 
+    render_balls(renderer, balls, sprites);
+}
+
+SDL_Renderer* initialize_render(SDL_Window* window) {
+    // Try to initialize the renderer of the window
+    SDL_Renderer* re = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+    if (!re)
+        return NULL;
+    SDL_SetRenderDrawBlendMode(re, SDL_BLENDMODE_BLEND);
+    // FIXME: Why is this needed? 
+    // First sprite won't load properly without drawing a non transparent point
+    SDL_SetRenderDrawColor(re, 255, 255, 255, 255);
+    SDL_RenderDrawPoint(re, 0, 0);
+    return re;
 }

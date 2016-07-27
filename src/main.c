@@ -1,89 +1,91 @@
 #include <SDL2/SDL.h>
 #include <stdio.h>
 #include <integer.h>
-#include <macros.h>
 #include <sprite.h>
 #include <stage.h>
 #include <render.h>
 // Posix
 #include <unistd.h>
 
-const char* MAIN_TITLE = "Moon Editor";
-
 #define SCREEN_WIDTH 512
 #define SCREEN_HEIGHT 480
 
-typedef struct sdl_context {
+typedef struct resources {
     SDL_Window* window;
     SDL_Renderer* renderer;
-} sdl_context;
+    lb_sprites* sprites;
+    lb_stages* stages;
+    FILE* rom;
+} resources;
 
-void context_destroy(sdl_context* c) {
-    if (c->renderer)
-        SDL_DestroyRenderer(c->renderer);
-    if (c->window)
-        SDL_DestroyWindow(c->window);
+void resources_cleanup(resources* res) {
+    if (res->stages)
+        free(res->stages);
+    if (res->sprites)
+        sprites_destroy(res->sprites);
+    if (res->renderer)
+        SDL_DestroyRenderer(res->renderer);
+    if (res->window)
+        SDL_DestroyWindow(res->window);
+    fclose(res->rom);
+    SDL_Quit();
 }
 
-int context_init(sdl_context* c) {
+void exit_error(resources* res) {
+    resources_cleanup(res);
+    fprintf(stderr, "SDL Failure: %s", SDL_GetError());
+    exit(EXIT_FAILURE);
+}
+
+SDL_Window* initialize_sdl() {
     // Try to initialize SDL
-    SDL_RET_IF_ERROR(SDL_Init(SDL_INIT_VIDEO));
+    if (SDL_Init(SDL_INIT_VIDEO))
+        return NULL;
     // Try to initialize the window
-    c->window = SDL_CreateWindow(MAIN_TITLE, SDL_WINDOWPOS_UNDEFINED,
-                                 SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH,
-                                 SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
-    SDL_RET_IF_NULL(c->window);
-    // Try to initialize the renderer of the window
-    c->renderer = SDL_CreateRenderer(c->window, -1, SDL_RENDERER_ACCELERATED);
-    SDL_RET_IF_NULL(c->renderer);
-    SDL_SetRenderDrawBlendMode(c->renderer, SDL_BLENDMODE_BLEND);
-    // FIXME: Why is this needed? 
-    // First sprite won't load properly without drawing a non transparent point
-    SDL_SetRenderDrawColor(c->renderer, 255, 255, 255, 255);
-    SDL_RenderDrawPoint(c->renderer, 0, 0);
-    return 0;
-}
-
-void show_stage(SDL_Renderer* renderer, size_t stage, lb_sprites* sprites,
-                  lb_stages* stages, table_tiles* tiles) {
-    size_t index = stages->order[stage] - 1;
-    table_full* table = stages->tables + index % TABLE_COUNT;
-    init_table_tiles(tiles, table);
-    render_back(renderer, table);
-    render_table(renderer, tiles, sprites); 
-    render_balls(renderer, stages->balls[index], sprites);
+    return SDL_CreateWindow("Moon Editor", SDL_WINDOWPOS_UNDEFINED,
+                            SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH,
+                            SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
 }
 
 int main(int argc, char* argv[]) {
-    RET_IF_TRUE(argc != 2, "Usage moon-editor <Lunar Ball Rom>\n");
-    FILE* rom = fopen(argv[1], "r");
-    RET_IF_FALSE(rom, "Couldn't open file %s\n", argv[1]);
-    sdl_context context;
-    if (context_init(&context)) {
-        context_destroy(&context);
+    if (argc != 2) {
+       fprintf(stderr, "Usage moon-editor <Lunar Ball Rom>\n");
+       return EXIT_FAILURE;
+    }
+    resources r = {0};
+    if (!(r.rom = fopen(argv[1], "r"))) {
+        fprintf(stderr, "Couldn't open file %s\n", argv[1]);
         return EXIT_FAILURE;
     }
-    SDL_Renderer* renderer = context.renderer;
-    lb_sprites* sprites = sprites_init(renderer, rom);
-    lb_stages* stages = stages_init(rom);
+    if (!(r.window = initialize_sdl()))
+        exit_error(&r);
+    if (!(r.renderer = initialize_render(r.window)))
+        exit_error(&r);
+    if (!(r.sprites = sprites_init(r.renderer, r.rom)))
+        exit_error(&r);
+    if (!(r.stages = stages_init(r.rom)))
+        exit_error(&r);
+    table_full* table = get_table(r.stages, 0);
+    stage_ball* balls = get_balls(r.stages, 0);
     table_tiles tiles;
     size_t i = 0;
     SDL_Event e = {0};
-    SDL_SetRenderTarget(renderer, NULL);
-    show_stage(renderer, i, sprites, stages, &tiles);
+    init_table_tiles(&tiles, table);
+    SDL_SetRenderTarget(r.renderer, NULL);
+    render_stage(r.renderer, r.sprites, table, balls, &tiles);
     while (e.type != SDL_QUIT) {
         SDL_WaitEvent(&e);
         if (e.type == SDL_MOUSEBUTTONDOWN) {
             i++;
             if (i >= STAGE_COUNT)
                 i = 0;
-            show_stage(renderer, i, sprites, stages, &tiles);
+            table = get_table(r.stages, i);
+            balls = get_balls(r.stages, i);
+            init_table_tiles(&tiles, table);
+            render_stage(r.renderer, r.sprites, table, balls, &tiles);
         }
-        SDL_RenderPresent(renderer);
+        SDL_RenderPresent(r.renderer);
     }
-    sprites_destroy(sprites);
-    context_destroy(&context);
-    SDL_Quit();
-    fclose(rom);
+    resources_cleanup(&r);
     return EXIT_SUCCESS;
 }

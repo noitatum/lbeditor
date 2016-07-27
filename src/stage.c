@@ -121,3 +121,22 @@ void init_table_tiles(table_tiles* tiles, table_full* table) {
     for (size_t i = 0; i < table->hole_count; i++)
         tile_table_hole(tiles, table->holes + i);
 }
+
+table_full* get_table(lb_stages* stages, size_t number) {
+    return stages->tables + ((stages->order[number] - 1) % TABLE_COUNT);
+}
+
+stage_ball* get_balls(lb_stages* stages, size_t number) {
+    return stages->balls[stages->order[number] - 1];
+}
+
+int table_add_hole(table_full* table, table_tiles* tiles, size_t x, size_t y) {
+    if (table->hole_count == TABLE_MAX_HOLES)
+        return -1;
+    table_hole* hole = table->holes + table->hole_count; 
+    hole->x = x;
+    hole->y = y;
+    tile_table_hole(tiles, hole);
+    table->hole_count++;
+    return 0;
+}

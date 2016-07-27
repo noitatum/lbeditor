@@ -8,8 +8,8 @@
 #define SPRITE_BLOCK_COUNT  0x30
 #define SPRITE_SLOPE_COUNT  0x14
 #define SPRITE_HOLE_COUNT   0x14
-#define SPRITE_MOON_COUNT   0x08
-#define SPRITE_RIGHT_COUNT  0xC0
+#define SPRITE_ALL_COUNT    0xB8
+#define SPRITE_DUST_COUNT   0x04
 
 typedef struct lb_sprites {
     SDL_Texture* balls[SPRITE_BALL_COUNT];
@@ -17,7 +17,8 @@ typedef struct lb_sprites {
     SDL_Texture* blocks[SPRITE_BLOCK_COUNT];
     SDL_Texture* slopes[SPRITE_SLOPE_COUNT];
     SDL_Texture* holes[SPRITE_HOLE_COUNT];
-    SDL_Texture* moons[SPRITE_MOON_COUNT];
+    SDL_Texture* crater;
+    SDL_Texture* dusts[SPRITE_DUST_COUNT];
 } lb_sprites;
 
 lb_sprites* sprites_init(SDL_Renderer* renderer, FILE* rom);

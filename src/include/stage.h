@@ -10,12 +10,12 @@
 #define TABLE_MAX_HOLES 256
 #define BALL_COUNT      8
 #define TABLE_MAX_X     0x20
-#define TABLE_MAX_Y     0x20
+#define TABLE_MAX_Y     0x1E
 #define TILE_MASK_BLOCK 0x0F
 
-typedef struct position {
+typedef struct stage_ball {
     u8 x, y;
-} position;
+} stage_ball;
 
 typedef struct table_line {
     u8 x, y, end;
@@ -38,7 +38,7 @@ typedef struct table_full {
 
 typedef struct lb_stages {
     u8         order[STAGE_COUNT];
-    position   balls[STAGE_COUNT][BALL_COUNT]; 
+    stage_ball balls[STAGE_COUNT][BALL_COUNT]; 
     table_full tables[TABLE_COUNT];
 } lb_stages; 
 
@@ -48,3 +48,6 @@ typedef struct table_tiles {
 
 lb_stages* stages_init(FILE* rom);
 void init_table_tiles(table_tiles* tiles, table_full* table);
+table_full* get_table(lb_stages* stages, size_t number);
+stage_ball* get_balls(lb_stages* stages, size_t number);
+int table_add_hole(table_full* table, table_tiles* tiles, size_t x, size_t y);

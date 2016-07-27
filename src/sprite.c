@@ -6,7 +6,7 @@
 #include <integer.h>
 
 #define TILE_SIZE 8
-#define BALL_SIZE 16
+#define BIG_SIZE 16
 #define TILE_BYTE_SIZE 16
 #define ROM_PPU_OFFSET 0x4010
 #define PPU_LETTERS_OFFSET (0x120 * TILE_BYTE_SIZE)
@@ -55,28 +55,42 @@ SDL_Texture* create_texture_tile(SDL_Renderer* renderer, FILE* rom,
     return tte;
 }
 
+void init_big_tile_corner(SDL_Renderer* renderer, FILE* rom, SDL_Texture* big,
+                          rgba_palette palette, size_t x, size_t y) {
+    SDL_Rect dst = {x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE};
+    SDL_Texture* corner = create_texture_tile(renderer, rom, palette);
+    SDL_SetRenderTarget(renderer, big);
+    SDL_RenderCopy(renderer, corner, NULL, &dst);
+    SDL_DestroyTexture(corner);
+}
+
+SDL_Texture* create_texture_crater(SDL_Renderer* renderer, FILE* rom,
+                                   rgba_palette palette) {
+    SDL_Texture* crater = create_texture(renderer, BIG_SIZE, BIG_SIZE);
+    init_big_tile_corner(renderer, rom, crater, palette, 1, 1);
+    init_big_tile_corner(renderer, rom, crater, palette, 0, 1);
+    init_big_tile_corner(renderer, rom, crater, palette, 0, 0);
+    init_big_tile_corner(renderer, rom, crater, palette, 1, 0);
+    return crater;
+}
+
 SDL_Texture* create_texture_ball(SDL_Renderer* renderer, FILE* rom,
                                  rgba_palette palette) {
-    SDL_Texture* ball = create_texture(renderer, BALL_SIZE, BALL_SIZE);
+    SDL_Texture* ball = create_texture(renderer, BIG_SIZE, BIG_SIZE);
     for (size_t x = 0; x < 2; x++)
-        for (size_t y = 0; y < 2; y++) {
-            SDL_Rect dst = {x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE};
-            SDL_Texture* corner = create_texture_tile(renderer, rom, palette);
-            SDL_SetRenderTarget(renderer, ball);
-            SDL_RenderCopy(renderer, corner, NULL, &dst);
-            SDL_DestroyTexture(corner);
-        }
+        for (size_t y = 0; y < 2; y++)
+            init_big_tile_corner(renderer, rom, ball, palette, x, y); 
     return ball;
 }
 
-void sprites_tiles_init(SDL_Renderer* renderer, FILE* rom, 
+void sprites_tiles_init(SDL_Renderer* renderer, FILE* rom, rgba_palette colors,
                        SDL_Texture** textures, size_t count) {
-    const ppu_palette colors = {{0x1D, 0x30, 0x00, 0x3F}};
     for (size_t i = 0; i < count; i++)
-        textures[i] = create_texture_tile(renderer, rom, ppu_to_rgba(colors));
+        textures[i] = create_texture_tile(renderer, rom, colors);
 }
 
 lb_sprites* sprites_init(SDL_Renderer* renderer, FILE* rom) {
+    static const ppu_palette TILE_COLORS = {{0x1D, 0x30, 0x00, 0x3F}};
     lb_sprites* sprites = (lb_sprites*) malloc(sizeof(lb_sprites));
     ppu_palette colors[ROM_PALETTE_BALL_SIZE];
     rgba_palette pals[ROM_PALETTE_BALL_SIZE];
@@ -88,12 +102,15 @@ lb_sprites* sprites_init(SDL_Renderer* renderer, FILE* rom) {
     for (size_t i = 0; i < SPRITE_BALL_COUNT; i++)
         sprites->balls[i] = create_texture_ball(renderer, rom, pals[i >> 1]);
     fseek(rom, ROM_PPU_OFFSET + PPU_LETTERS_OFFSET, SEEK_SET);
-    sprites_tiles_init(renderer, rom, sprites->letters, SPRITE_RIGHT_COUNT);
+    rgba_palette rgba = ppu_to_rgba(TILE_COLORS);
+    sprites_tiles_init(renderer, rom, rgba, sprites->letters, SPRITE_ALL_COUNT);
+    sprites->crater = create_texture_crater(renderer, rom, rgba); 
+    sprites_tiles_init(renderer, rom, rgba, sprites->dusts, SPRITE_DUST_COUNT);
     return sprites;
 }
 
 void sprites_destroy(lb_sprites* sprites) {
-    for (size_t i = 0; i < SPRITE_BALL_COUNT + SPRITE_RIGHT_COUNT; i++)
+    for (size_t i = 0; i < sizeof(sprites) / sizeof(SDL_Texture*); i++)
         SDL_DestroyTexture(((SDL_Texture**) sprites)[i]);
     free(sprites);
 }
