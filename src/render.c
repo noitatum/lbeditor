@@ -105,7 +105,7 @@ int random_tile(SDL_Rect* rect, size_t big,
 }
 
 void render_dust(SDL_Renderer* renderer, lb_sprites* sprites) {
-    size_t size_x = TABLE_MAX_X + 2, size_y = TABLE_MAX_Y + 2;
+    size_t size_x = GRID_WIDTH + 2, size_y = GRID_HEIGHT + 2;
     u8 dust[size_y][size_x];
     memset(dust, 0, sizeof(dust));
     set_render_color(renderer, NES_PALETTE[0x25]);
@@ -143,10 +143,10 @@ u16 get_surroundings(table_tiles* tiles, size_t y, size_t x) {
     return sur;
 }
 
-void render_table(SDL_Renderer* renderer, table_tiles* tiles, 
+void render_tiles(SDL_Renderer* renderer, table_tiles* tiles,
                   lb_sprites* sprites) { 
-    for (size_t j = 1; j < TABLE_MAX_Y - 2; j++) {
-        for (size_t i = 1; i < TABLE_MAX_X - 2; i++) {
+    for (size_t j = 1; j < GRID_HEIGHT - 1; j++) {
+        for (size_t i = 1; i < GRID_WIDTH - 1; i++) {
             u8 tile = tiles->tiles[j][i];
             SDL_Rect dest = {i * TSIZE, j * TSIZE, TSIZE, TSIZE};
             size_t hole = hole_order[tile >> 4];
@@ -155,6 +155,7 @@ void render_table(SDL_Renderer* renderer, table_tiles* tiles,
             size_t block = tile & TILE_MASK_BLOCK;
             if (!block)
                 continue;
+            // FIXME: This is not how it works in the game
             u16 sur = get_surroundings(tiles, j, i);
             if (block == TILE_MASK_BLOCK) {
                 SDL_Texture* block = sprites->blocks[block_order[sur & 0xFF]];
@@ -184,12 +185,11 @@ void render_stage(SDL_Renderer* renderer, lb_sprites* sprites,
     srand((u32) (u64) table);
     render_dust(renderer, sprites);
     render_back(renderer, table);
-    render_table(renderer, tiles, sprites); 
+    render_tiles(renderer, tiles, sprites); 
     render_balls(renderer, balls, sprites);
 }
 
 SDL_Renderer* initialize_render(SDL_Window* window) {
-    // Try to initialize the renderer of the window
     SDL_Renderer* re = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
     if (!re)
         return NULL;
@@ -199,4 +199,23 @@ SDL_Renderer* initialize_render(SDL_Window* window) {
     SDL_SetRenderDrawColor(re, 255, 255, 255, 255);
     SDL_RenderDrawPoint(re, 0, 0);
     return re;
+}
+
+void printf_pos(SDL_Renderer* renderer, lb_sprites* sprites, 
+                size_t x, size_t y, const char* format, ...) {
+    va_list l;
+    char buffer[GRID_WIDTH * GRID_HEIGHT] = {0};
+    va_start(l, format);
+    vsnprintf(buffer, GRID_WIDTH * GRID_HEIGHT, format, l);
+    va_end(l);
+    SDL_Rect target = {x * TSIZE, y * TSIZE, TSIZE, TSIZE};
+    for (size_t i = 0; i < GRID_WIDTH * GRID_HEIGHT && buffer[i]; i++) {
+        if (buffer[i] == '\n') {
+            target.x = x * TSIZE;
+            target.y += TSIZE;
+            continue;
+        }
+        SDL_RenderCopy(renderer, sprites->letters[buffer[i] - 32], 0, &target);
+        target.x += TSIZE;
+    }
 }

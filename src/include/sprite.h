@@ -8,7 +8,7 @@
 #define SPRITE_BLOCK_COUNT  0x30
 #define SPRITE_SLOPE_COUNT  0x14
 #define SPRITE_HOLE_COUNT   0x14
-#define SPRITE_ALL_COUNT    0xB8
+#define SPRITE_ALL_COUNT    0x58
 #define SPRITE_DUST_COUNT   0x04
 
 typedef struct lb_sprites {
@@ -21,5 +21,6 @@ typedef struct lb_sprites {
     SDL_Texture* dusts[SPRITE_DUST_COUNT];
 } lb_sprites;
 
+SDL_Texture* create_texture(SDL_Renderer* renderer, size_t x, size_t y);
 lb_sprites* sprites_init(SDL_Renderer* renderer, FILE* rom);
 void sprites_destroy(lb_sprites* sprites);

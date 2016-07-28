@@ -4,21 +4,22 @@
 #include <sprite.h>
 #include <stage.h>
 #include <render.h>
+#include <hud.h>
 // Posix
 #include <unistd.h>
-
-#define SCREEN_WIDTH 512
-#define SCREEN_HEIGHT 480
 
 typedef struct resources {
     SDL_Window* window;
     SDL_Renderer* renderer;
     lb_sprites* sprites;
     lb_stages* stages;
+    lb_hud* hud;
     FILE* rom;
 } resources;
 
 void resources_cleanup(resources* res) {
+    if (res->hud)
+        hud_destroy(res->hud);
     if (res->stages)
         free(res->stages);
     if (res->sprites)
@@ -65,10 +66,12 @@ int main(int argc, char* argv[]) {
         exit_error(&r);
     if (!(r.stages = stages_init(r.rom)))
         exit_error(&r);
-    table_full* table = get_table(r.stages, 0);
-    stage_ball* balls = get_balls(r.stages, 0);
+    if (!(r.hud = hud_init(r.renderer, r.sprites)))
+        exit_error(&r);
+    table_full* table = r.stages->tables;
+    size_t i = 0, st = table->stage_a;
+    stage_ball* balls = get_balls(r.stages, st);
     table_tiles tiles;
-    size_t i = 0;
     SDL_Event e = {0};
     init_table_tiles(&tiles, table);
     SDL_SetRenderTarget(r.renderer, NULL);
@@ -80,24 +83,33 @@ int main(int argc, char* argv[]) {
             if (key == SDLK_LEFT || key == SDLK_RIGHT) {
                 if (key == SDLK_RIGHT) {
                     i++;
-                    if (i == STAGE_COUNT)
+                    if (i == TABLE_COUNT)
                         i = 0;
                 } else {
                     if (i == 0)
-                        i = STAGE_COUNT;
+                        i = TABLE_COUNT;
                     i--;
                 }
-                table = get_table(r.stages, i);
-                balls = get_balls(r.stages, i);
+                table = r.stages->tables + i; 
+                st = table->stage_a;
+                balls = get_balls(r.stages, st);
                 init_table_tiles(&tiles, table);
                 render_stage(r.renderer, r.sprites, table, balls, &tiles);
             }
+            if (key == SDLK_DOWN || key == SDLK_UP) {
+                st = st == table->stage_a ? table->stage_b : table->stage_a;
+                balls = get_balls(r.stages, st);
+                render_stage(r.renderer, r.sprites, table, balls, &tiles);
+            }
+            if (key == SDLK_TAB) 
+                r.hud->option = !r.hud->option;
         } 
         if (e.type == SDL_MOUSEBUTTONDOWN) {
-            table_add_hole(table, &tiles, (e.button.x - 8) / 16, 
-                                          (e.button.y - 8) / 16);
+            table_add_hole(r.stages, table, &tiles, 
+                           (e.button.x - 8) / 16, (e.button.y - 8) / 16);
             render_stage(r.renderer, r.sprites, table, balls, &tiles);
         }
+        render_hud(r.renderer, r.hud, r.sprites, r.stages, i);
         SDL_RenderPresent(r.renderer);
     }
     resources_cleanup(&r);

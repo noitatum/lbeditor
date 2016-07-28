@@ -1,11 +1,11 @@
 # Object files
-OBJS = main.o sprite.o stage.o render.o 
+OBJS = main.o sprite.o stage.o render.o hud.o 
 # Object full path
 OBJS_FULL = $(addprefix $(OBJ_DIR), $(OBJS))
 # Compiler
 CC = gcc
 # Compiler flags
-CFLAGS = -std=c11 -Wall -Werror -Isrc/include/ 
+CFLAGS = -std=c11 -Wall -Wextra -Werror -Isrc/include/ 
 # Optimization flags
 OPT_FLAGS = -O2 -flto
 # Linker flags
