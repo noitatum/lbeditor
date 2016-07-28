@@ -96,18 +96,22 @@ int main(int argc, char* argv[]) {
                 init_table_tiles(&tiles, table);
                 render_stage(r.renderer, r.sprites, table, balls, &tiles);
             }
-            if (key == SDLK_DOWN || key == SDLK_UP) {
+            if (key == SDLK_UP) {
                 st = st == table->stage_a ? table->stage_b : table->stage_a;
                 balls = get_balls(r.stages, st);
                 render_stage(r.renderer, r.sprites, table, balls, &tiles);
             }
-            if (key == SDLK_TAB) 
-                r.hud->option = !r.hud->option;
+            if (key == SDLK_DOWN) 
+                r.hud->toolbox = !r.hud->toolbox;
         } 
         if (e.type == SDL_MOUSEBUTTONDOWN) {
-            table_add_hole(r.stages, table, &tiles, 
-                           (e.button.x - 8) / 16, (e.button.y - 8) / 16);
-            render_stage(r.renderer, r.sprites, table, balls, &tiles);
+            if (e.button.y / TSIZE > TABLE_MIN_Y) {
+                table_add_hole(r.stages, table, &tiles, 
+                               (e.button.x - 8) / TSIZE, (e.button.y - 8) / TSIZE);
+                render_stage(r.renderer, r.sprites, table, balls, &tiles);
+            } else {
+                hud_click(r.hud, e.button.x, e.button.y);
+            }
         }
         render_hud(r.renderer, r.hud, r.sprites, r.stages, i);
         SDL_RenderPresent(r.renderer);

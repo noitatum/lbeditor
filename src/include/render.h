@@ -8,6 +8,7 @@
 #define SCREEN_WIDTH 512
 #define SCREEN_HEIGHT 480
 #define TSIZE 16
+#define BSIZE (TSIZE * 2)
 
 typedef struct rgba_color {
     u8 r, g, b, a;
