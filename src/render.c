@@ -1,7 +1,5 @@
 #include <SDL2/SDL.h>
 #include <render.h>
-#include <stage.h>
-#include <sprite.h>
 
 const rgba_color NES_PALETTE[64] = {
     { 84, 84, 84,255}, {  0, 30,116,255}, {  8, 16,144,255}, { 48,  0,136,255},
@@ -181,11 +179,12 @@ void render_balls(SDL_Renderer* renderer, stage_ball* balls,
 }
 
 void render_stage(SDL_Renderer* renderer, lb_sprites* sprites, 
-                  table_full* table, stage_ball* balls, table_tiles* tiles) {
-    srand((u32) (u64) table);
+                  lb_stages* stages, lb_hud* hud, table_tiles* tiles) {
+    srand(hud->map);
     render_dust(renderer, sprites);
-    render_back(renderer, table);
+    render_back(renderer, stages->tables + hud->map);
     render_tiles(renderer, tiles, sprites); 
+    stage_ball* balls = stages->balls[hud->map + TABLE_COUNT * hud->stage_b];
     render_balls(renderer, balls, sprites);
 }
 

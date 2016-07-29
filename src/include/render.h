@@ -3,6 +3,7 @@
 #include <SDL2/SDL.h>
 #include <sprite.h>
 #include <stage.h>
+#include <hud.h>
 #include <integer.h>
 
 #define SCREEN_WIDTH 512
@@ -16,7 +17,7 @@ typedef struct rgba_color {
 
 SDL_Renderer* initialize_render(SDL_Window* window);
 void render_stage(SDL_Renderer* renderer, lb_sprites* sprites, 
-                  table_full* table, stage_ball* balls, table_tiles* tiles);
+                  lb_stages* stages, lb_hud* hud, table_tiles* tiles);
 void render_tiles(SDL_Renderer* renderer, table_tiles* tiles, 
                   lb_sprites* sprites);
 void set_render_color(SDL_Renderer* renderer, rgba_color color);

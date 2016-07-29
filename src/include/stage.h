@@ -64,8 +64,6 @@ typedef struct table_tiles {
 
 lb_stages* stages_init(FILE* rom);
 void init_table_tiles(table_tiles* tiles, table_full* table);
-table_full* get_table(lb_stages* stages, size_t number);
-stage_ball* get_balls(lb_stages* stages, size_t number);
 void tile_table_lines(table_tiles* tiles, const table_line* lines, size_t count);
 int table_add_hole(lb_stages* stages, table_full* table, table_tiles* tiles, 
                    size_t x, size_t y);

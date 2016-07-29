@@ -72,8 +72,8 @@ SDL_Texture* create_texture_tools(SDL_Renderer* renderer, lb_sprites* sprites) {
 }
 
 void render_hud(SDL_Renderer* renderer, lb_hud* hud, 
-                lb_sprites* sprites, lb_stages* stages, size_t index) {
-    table_full* table = stages->tables + index;
+                lb_sprites* sprites, lb_stages* stages) {
+    table_full* table = stages->tables + hud->map;
     SDL_RenderCopy(renderer, hud->frame, NULL, NULL); 
     if (hud->toolbox == TOOLBOX_TABLE)
         SDL_RenderCopy(renderer, hud->tools, NULL, &toolbox);
@@ -81,7 +81,7 @@ void render_hud(SDL_Renderer* renderer, lb_hud* hud,
         SDL_RenderCopy(renderer, hud->balls, NULL, &toolbox);
     printf_pos(renderer, sprites, 0xD, 0x2, 
         "map %02i byte %i\nstages line %i\n%02i %02i  hole %i\n       back %i\n"
-        , index, table->byte_count, table->line_count, table->stage_a + 1, 
+        , hud->map, table->byte_count, table->line_count, table->stage_a + 1, 
         table->stage_b + 1, table->hole_count, table->back_count);
     SDL_Rect selected = {BSIZE * (hud->tool % 5) + toolbox.x, 
                          BSIZE * (hud->tool / 5) + toolbox.y, BSIZE, BSIZE};
@@ -90,9 +90,7 @@ void render_hud(SDL_Renderer* renderer, lb_hud* hud,
 }
 
 size_t in_rect(SDL_Rect r, ssize_t x, ssize_t y) {
-    if (x >= r.x && y >= r.y && x - r.x < r.w && y - r.y < r.h)
-        return 1;
-    return 0;
+    return x >= r.x && y >= r.y && x - r.x < r.w && y - r.y < r.h;
 }
 
 void hud_click(lb_hud* hud, size_t x, size_t y) {
@@ -102,11 +100,10 @@ void hud_click(lb_hud* hud, size_t x, size_t y) {
 
 lb_hud* hud_init(SDL_Renderer* renderer, lb_sprites* sprites) {
     lb_hud* hud = malloc(sizeof(lb_hud));
+    *hud = (lb_hud) {0};
     hud->frame = create_texture_frame(renderer, sprites);
     hud->tools = create_texture_tools(renderer, sprites);
     hud->balls = create_texture_balls(renderer, sprites);
-    hud->toolbox = TOOLBOX_TABLE;
-    hud->tool = 0;
     return hud;
 }
 

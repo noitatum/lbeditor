@@ -126,10 +126,6 @@ void init_table_tiles(table_tiles* tiles, table_full* table) {
         tile_table_hole(tiles, table->holes + i);
 }
 
-stage_ball* get_balls(lb_stages* stages, size_t number) {
-    return stages->balls[stages->order[number] - 1];
-}
-
 int table_add_hole(lb_stages* stages, table_full* table, table_tiles* tiles, 
                    size_t x, size_t y) {
     if (table->hole_count == TABLE_MAX_HOLES)

@@ -68,52 +68,45 @@ int main(int argc, char* argv[]) {
         exit_error(&r);
     if (!(r.hud = hud_init(r.renderer, r.sprites)))
         exit_error(&r);
-    table_full* table = r.stages->tables;
-    size_t i = 0, st = table->stage_a;
-    stage_ball* balls = get_balls(r.stages, st);
     table_tiles tiles;
     SDL_Event e = {0};
-    init_table_tiles(&tiles, table);
+    init_table_tiles(&tiles, r.stages->tables);
     SDL_SetRenderTarget(r.renderer, NULL);
-    render_stage(r.renderer, r.sprites, table, balls, &tiles);
+    render_stage(r.renderer, r.sprites, r.stages, r.hud, &tiles);
     while (e.type != SDL_QUIT) {
         SDL_WaitEvent(&e);
         if (e.type == SDL_KEYDOWN) {
             SDL_Keycode key = e.key.keysym.sym;
             if (key == SDLK_LEFT || key == SDLK_RIGHT) {
                 if (key == SDLK_RIGHT) {
-                    i++;
-                    if (i == TABLE_COUNT)
-                        i = 0;
+                    r.hud->map++;
+                    if (r.hud->map == TABLE_COUNT)
+                        r.hud->map = 0;
                 } else {
-                    if (i == 0)
-                        i = TABLE_COUNT;
-                    i--;
+                    if (r.hud->map == 0)
+                        r.hud->map = TABLE_COUNT;
+                    r.hud->map--;
                 }
-                table = r.stages->tables + i; 
-                st = table->stage_a;
-                balls = get_balls(r.stages, st);
-                init_table_tiles(&tiles, table);
-                render_stage(r.renderer, r.sprites, table, balls, &tiles);
+                init_table_tiles(&tiles, r.stages->tables + r.hud->map);
+                render_stage(r.renderer, r.sprites, r.stages, r.hud, &tiles);
             }
             if (key == SDLK_UP) {
-                st = st == table->stage_a ? table->stage_b : table->stage_a;
-                balls = get_balls(r.stages, st);
-                render_stage(r.renderer, r.sprites, table, balls, &tiles);
+                r.hud->stage_b = !r.hud->stage_b;
+                render_stage(r.renderer, r.sprites, r.stages, r.hud, &tiles);
             }
             if (key == SDLK_DOWN) 
                 r.hud->toolbox = !r.hud->toolbox;
         } 
         if (e.type == SDL_MOUSEBUTTONDOWN) {
             if (e.button.y / TSIZE > TABLE_MIN_Y) {
-                table_add_hole(r.stages, table, &tiles, 
+                table_add_hole(r.stages, r.stages->tables + r.hud->map, &tiles, 
                                (e.button.x - 8) / TSIZE, (e.button.y - 8) / TSIZE);
-                render_stage(r.renderer, r.sprites, table, balls, &tiles);
+                render_stage(r.renderer, r.sprites, r.stages, r.hud, &tiles);
             } else {
                 hud_click(r.hud, e.button.x, e.button.y);
             }
         }
-        render_hud(r.renderer, r.hud, r.sprites, r.stages, i);
+        render_hud(r.renderer, r.hud, r.sprites, r.stages);
         SDL_RenderPresent(r.renderer);
     }
     resources_cleanup(&r);
