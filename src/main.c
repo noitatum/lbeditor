@@ -5,8 +5,6 @@
 #include <stage.h>
 #include <render.h>
 #include <hud.h>
-// Posix
-#include <unistd.h>
 
 typedef struct resources {
     SDL_Window* window;
