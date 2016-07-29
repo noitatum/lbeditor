@@ -6,6 +6,8 @@
 #include <render.h>
 #include <hud.h>
 
+static const SDL_Rect map_area = {3 * TSIZE, 8 * TSIZE, 26 * TSIZE, 19 * TSIZE};
+
 typedef struct resources {
     SDL_Window* window;
     SDL_Renderer* renderer;
@@ -46,6 +48,35 @@ SDL_Window* initialize_sdl() {
                             SCREEN_WIDTH, SCREEN_HEIGHT, 0);
 }
 
+void handle_event(SDL_Event* e, resources* r, table_tiles* tiles) {
+    if (e->type == SDL_KEYDOWN) {
+        SDL_Keycode key = e->key.keysym.sym;
+        if (key == SDLK_LEFT || key == SDLK_RIGHT) {
+            if (key == SDLK_RIGHT) {
+                r->hud->map++;
+                if (r->hud->map == TABLE_COUNT)
+                    r->hud->map = 0;
+            } else {
+                if (r->hud->map == 0)
+                    r->hud->map = TABLE_COUNT;
+                r->hud->map--;
+            }
+            init_table_tiles(tiles, r->stages->tables + r->hud->map);
+        } else if (key == SDLK_UP)
+            r->hud->stage_b = !r->hud->stage_b;
+          else if (key == SDLK_DOWN)
+            r->hud->toolbox = !r->hud->toolbox;
+    } else if (e->type == SDL_MOUSEBUTTONDOWN) {
+        size_t x = e->button.x, y = e->button.y;
+        if (in_rect(map_area, x, y)) {
+            table_add_hole(r->stages, r->stages->tables + r->hud->map, tiles,
+                           (x - 8) / TSIZE, (y - 8) / TSIZE);
+        } else {
+            hud_click(r->hud, x, y);
+        }
+    }
+}
+
 int main(int argc, char* argv[]) {
     if (argc != 2) {
        fprintf(stderr, "Usage moon-editor <Lunar Ball Rom>\n");
@@ -72,33 +103,7 @@ int main(int argc, char* argv[]) {
     SDL_SetRenderTarget(r.renderer, NULL);
     while (e.type != SDL_QUIT) {
         SDL_WaitEvent(&e);
-        if (e.type == SDL_KEYDOWN) {
-            SDL_Keycode key = e.key.keysym.sym;
-            if (key == SDLK_LEFT || key == SDLK_RIGHT) {
-                if (key == SDLK_RIGHT) {
-                    r.hud->map++;
-                    if (r.hud->map == TABLE_COUNT)
-                        r.hud->map = 0;
-                } else {
-                    if (r.hud->map == 0)
-                        r.hud->map = TABLE_COUNT;
-                    r.hud->map--;
-                }
-                init_table_tiles(&tiles, r.stages->tables + r.hud->map);
-            } else if (key == SDLK_UP)
-                r.hud->stage_b = !r.hud->stage_b;
-              else if (key == SDLK_DOWN) 
-                r.hud->toolbox = !r.hud->toolbox;
-        }
-        if (e.type == SDL_MOUSEBUTTONDOWN) {
-            if (e.button.y / TSIZE > TABLE_MIN_Y) {
-                table_add_hole(r.stages, r.stages->tables + r.hud->map, &tiles,
-                               (e.button.x - 8) / TSIZE, 
-                               (e.button.y - 8) / TSIZE);
-            } else {
-                hud_click(r.hud, e.button.x, e.button.y);
-            }
-        }
+        handle_event(&e, &r, &tiles);
         render_stage(r.renderer, r.sprites, r.stages, r.hud, &tiles);
         render_hud(r.renderer, r.hud, r.sprites, r.stages);
         SDL_RenderPresent(r.renderer);

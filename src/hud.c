@@ -2,7 +2,7 @@
 #include <render.h>
 
 #define TOOLBOX_TABLE 0
-#define TOOLBOX_BALLS 1
+#define TOOLBOX_COUNT 10
 
 static const table_line hud_lines[] = {
     {0x02 | TYPE_HORIZONTAL, 0x01, 0x1D}, {0x02 | TYPE_HORIZONTAL, 0x06, 0x1D},
@@ -17,6 +17,10 @@ static const table_line hud_lines[] = {
 static const SDL_Rect screen =   {0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
 static const SDL_Rect hud_back = {2 * TSIZE, 2 * TSIZE, 28 * TSIZE, 4 * TSIZE};
 static const SDL_Rect toolbox =  {2 * TSIZE, 2 * TSIZE, 10 * TSIZE, 4 * TSIZE};
+
+size_t in_rect(SDL_Rect r, ssize_t x, ssize_t y) {
+    return x >= r.x && y >= r.y && x - r.x < r.w && y - r.y < r.h;
+}
 
 SDL_Texture* create_texture_frame(SDL_Renderer* renderer, lb_sprites* sprites) {
     SDL_Texture* hud = create_texture(renderer, SCREEN_WIDTH, SCREEN_HEIGHT); 
@@ -90,13 +94,13 @@ void render_hud(SDL_Renderer* renderer, lb_hud* hud,
     SDL_RenderDrawRect(renderer, &selected);
 }
 
-size_t in_rect(SDL_Rect r, ssize_t x, ssize_t y) {
-    return x >= r.x && y >= r.y && x - r.x < r.w && y - r.y < r.h;
-}
-
 void hud_click(lb_hud* hud, size_t x, size_t y) {
     if (in_rect(toolbox, x, y))
         hud->tool = (x - toolbox.x) / BSIZE + ((y - toolbox.y) / BSIZE) * 5;
+}
+
+size_t hud_tool(lb_hud* hud) {
+    return hud->tool + hud->toolbox * TOOLBOX_COUNT;
 }
 
 lb_hud* hud_init(SDL_Renderer* renderer, lb_sprites* sprites) {

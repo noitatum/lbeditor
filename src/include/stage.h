@@ -21,7 +21,6 @@
 #define TYPE_MASK       0x60
 #define GRID_WIDTH      0x20
 #define GRID_HEIGHT     0x1E
-#define TABLE_MIN_Y     0x08
 
 #define ROM_STAGE_TABLE_OFFSET 0x1507
 #define ROM_STAGE_ORDER_OFFSET 0x4D47
