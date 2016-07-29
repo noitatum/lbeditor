@@ -14,6 +14,7 @@ static const table_line hud_lines[] = {
     {0x1E | TYPE_DIAGONAL  , 0x06 | SLOPE_NW, 0x06},
 };
 
+static const SDL_Rect screen =   {0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
 static const SDL_Rect hud_back = {2 * TSIZE, 2 * TSIZE, 28 * TSIZE, 4 * TSIZE};
 static const SDL_Rect toolbox =  {2 * TSIZE, 2 * TSIZE, 10 * TSIZE, 4 * TSIZE};
 
@@ -74,7 +75,7 @@ SDL_Texture* create_texture_tools(SDL_Renderer* renderer, lb_sprites* sprites) {
 void render_hud(SDL_Renderer* renderer, lb_hud* hud, 
                 lb_sprites* sprites, lb_stages* stages) {
     table_full* table = stages->tables + hud->map;
-    SDL_RenderCopy(renderer, hud->frame, NULL, NULL); 
+    SDL_RenderCopy(renderer, hud->frame, NULL, &screen); 
     if (hud->toolbox == TOOLBOX_TABLE)
         SDL_RenderCopy(renderer, hud->tools, NULL, &toolbox);
     else

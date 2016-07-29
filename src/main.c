@@ -41,9 +41,9 @@ SDL_Window* initialize_sdl() {
     if (SDL_Init(SDL_INIT_VIDEO))
         return NULL;
     // Try to initialize the window
-    return SDL_CreateWindow("Moon Editor", SDL_WINDOWPOS_UNDEFINED,
-                            SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH,
-                            SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
+    return SDL_CreateWindow("Moon Editor", 
+                            SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 
+                            SCREEN_WIDTH, SCREEN_HEIGHT, 0);
 }
 
 int main(int argc, char* argv[]) {
@@ -70,7 +70,6 @@ int main(int argc, char* argv[]) {
     SDL_Event e = {0};
     init_table_tiles(&tiles, r.stages->tables);
     SDL_SetRenderTarget(r.renderer, NULL);
-    render_stage(r.renderer, r.sprites, r.stages, r.hud, &tiles);
     while (e.type != SDL_QUIT) {
         SDL_WaitEvent(&e);
         if (e.type == SDL_KEYDOWN) {
@@ -86,24 +85,21 @@ int main(int argc, char* argv[]) {
                     r.hud->map--;
                 }
                 init_table_tiles(&tiles, r.stages->tables + r.hud->map);
-                render_stage(r.renderer, r.sprites, r.stages, r.hud, &tiles);
-            }
-            if (key == SDLK_UP) {
+            } else if (key == SDLK_UP)
                 r.hud->stage_b = !r.hud->stage_b;
-                render_stage(r.renderer, r.sprites, r.stages, r.hud, &tiles);
-            }
-            if (key == SDLK_DOWN) 
+              else if (key == SDLK_DOWN) 
                 r.hud->toolbox = !r.hud->toolbox;
-        } 
+        }
         if (e.type == SDL_MOUSEBUTTONDOWN) {
             if (e.button.y / TSIZE > TABLE_MIN_Y) {
-                table_add_hole(r.stages, r.stages->tables + r.hud->map, &tiles, 
-                               (e.button.x - 8) / TSIZE, (e.button.y - 8) / TSIZE);
-                render_stage(r.renderer, r.sprites, r.stages, r.hud, &tiles);
+                table_add_hole(r.stages, r.stages->tables + r.hud->map, &tiles,
+                               (e.button.x - 8) / TSIZE, 
+                               (e.button.y - 8) / TSIZE);
             } else {
                 hud_click(r.hud, e.button.x, e.button.y);
             }
         }
+        render_stage(r.renderer, r.sprites, r.stages, r.hud, &tiles);
         render_hud(r.renderer, r.hud, r.sprites, r.stages);
         SDL_RenderPresent(r.renderer);
     }
