@@ -129,6 +129,8 @@ int main(int argc, char* argv[]) {
         handle_event(&e, &r, &tiles, &action);
         render_stage(r.renderer, r.sprites, r.stages, r.hud, &tiles);
         render_hud(r.renderer, r.hud, r.sprites, r.stages);
+        SDL_SetRenderDrawColor(r.renderer, 0x00, 0xFF, 0x00, 0xFF);
+        SDL_RenderDrawRect(r.renderer, &map_area);
         SDL_RenderPresent(r.renderer);
     }
     resources_cleanup(&r);
