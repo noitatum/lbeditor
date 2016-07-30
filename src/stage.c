@@ -3,12 +3,15 @@
 #include <stdio.h>
 #include <stage.h>
 #include <string.h>
+#include <hud.h>
 
-#define TABLE_END_BIT   0x80 
-#define TABLE_POS_MASK  0x1F 
-#define FLAG_BODY_SLANT 0x80
-#define FLAG_BODY_BLOCK 0x40 
-#define HOLE_BIT        0x10
+#define TABLE_END_BIT    0x80
+#define TABLE_POS_MASK   0x1F
+#define FLAG_BODY_SLANT  0x80
+#define FLAG_BODY_BLOCK  0x40
+#define FLAG_BODY_SQUARE 0x00
+#define FLAG_LINE_BLOCK  0x20
+#define HOLE_BIT         0x10
 
 void table_init(FILE* rom, table_full* table) {
     size_t i;
@@ -104,7 +107,9 @@ void tile_table_line(table_tiles* tiles, const table_line* line) {
         for (size_t j = y; j <= line->end; j++)
             tiles->tiles[j][x] |= TILE_MASK_BLOCK;
     } else {
-        u8 tile = line->y & 0x20 ? TILE_MASK_BLOCK : slope_table[line->y >> 6];
+        u8 tile = slope_table[line->y >> 6];
+        if (line->y & FLAG_LINE_BLOCK)
+            tile = TILE_MASK_BLOCK;
         if (line->end > y)
             for (size_t j = x, k = y; k <= line->end; j++, k++)
                 tile_table_slope(tiles, j, k, tile);
@@ -126,6 +131,23 @@ void init_table_tiles(table_tiles* tiles, table_full* table) {
         tile_table_hole(tiles, table->holes + i);
 }
 
+int table_add_back(lb_stages* stages, table_full* table,
+                   size_t x1, size_t y1, size_t x2, size_t y2) {
+    if (table->back_count == TABLE_MAX_BACKS)
+        return -1;
+    table_back* back = table->backs + table->back_count;
+    size_t tx1 = x1, tx2 = x2, ty1 = y1, ty2 = y2;
+    if (x1 > x2)
+        tx1 = x2, tx2 = x1;
+    if (y1 > y2)
+        ty1 = y2, ty2 = y1;
+    *back = (table_back) {tx1, ty1, tx2, ty2};
+    table->back_count++;
+    table->byte_count += sizeof(table_back);
+    stages->byte_count += sizeof(table_back);
+    return 0;
+}
+
 int table_add_hole(lb_stages* stages, table_full* table, table_tiles* tiles, 
                    size_t x, size_t y) {
     if (table->hole_count == TABLE_MAX_HOLES)
@@ -133,11 +155,50 @@ int table_add_hole(lb_stages* stages, table_full* table, table_tiles* tiles,
     if (tiles->tiles[y][x] & HOLE_BIT)
         return 0;
     table_hole* hole = table->holes + table->hole_count; 
-    hole->x = x;
-    hole->y = y;
+    *hole = (table_hole) {x, y};
     tile_table_hole(tiles, hole);
     table->hole_count++;
     table->byte_count += sizeof(table_hole);
     stages->byte_count += sizeof(table_hole);
+    return 0;
+}
+
+int table_add_line(lb_stages* stages, table_full* table, table_tiles* tiles,
+                   size_t x1, size_t y1, size_t x2, size_t y2, size_t tool) {
+    if (table->line_count == TABLE_MAX_LINES)
+        return -1;
+    size_t bytes = sizeof(table_line), x = x1, y = y1, end = y2;
+    size_t block = FLAG_LINE_BLOCK, type = TYPE_DIAGONAL;
+    if ((x1 == x2 && y1 == y2 && tool == TOOL_BLOCK) ||
+        tool == TOOL_SLANT || tool == TOOL_SQUARE) {
+        if (tool == TOOL_BLOCK)
+            block = FLAG_BODY_BLOCK;
+        else if (tool == TOOL_SLANT)
+            block = FLAG_BODY_SLANT;
+        else
+            block = FLAG_BODY_SQUARE;
+        bytes--;
+        type = TYPE_BODY;
+    } else if (y1 == y2 && tool == TOOL_BLOCK) {
+        end = x2;
+        if (x1 > x2)
+            x = x2, end = x1;
+        type = TYPE_HORIZONTAL;
+    } else if (x1 == x2 && tool == TOOL_BLOCK) {
+        if (y1 > y2)
+            y = y2, end = y1;
+        type = TYPE_VERTICAL;
+    } else {
+        if (tool != TOOL_BLOCK)
+            block = tool << 6;
+        if (x1 > x2)
+            x = x1 - (y1 > y2 ? y1 - y2 : y2 - y1), y = y2, end = y1;
+    }
+    table_line* line = table->lines + table->line_count;
+    *line = (table_line) {x | type, y | block, end};
+    tile_table_line(tiles, line);
+    table->line_count++;
+    table->byte_count += bytes;
+    stages->byte_count += bytes;
     return 0;
 }

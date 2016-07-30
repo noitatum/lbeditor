@@ -4,6 +4,12 @@
 #include <sprite.h>
 #include <stage.h>
 
+#define TOOL_BLOCK  4
+#define TOOL_SLANT  5
+#define TOOL_SQUARE 6
+#define TOOL_HOLE   7
+#define TOOL_BACK   8
+
 typedef struct lb_hud {
     size_t tool, toolbox, map, stage_b; 
     SDL_Texture* frame;
