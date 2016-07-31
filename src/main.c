@@ -57,7 +57,7 @@ void handle_action(table_full* table, table_tiles* tiles, action_tool* action) {
     if (action->tool == TOOL_HOLE)
         err = table_add_hole(table, tiles, action->x2, action->y2);
     else if (action->tool == TOOL_BACK)
-        err = table_add_back(table, tiles, action->x1, action->y1
+        err = table_add_back(table, tiles, action->x1, action->y1,
                              action->x2, action->y2);
     else if (action->tool <= TOOL_BACK)
         err = table_add_line(table, tiles, action->x1, action->y1,
@@ -82,6 +82,7 @@ void handle_event(SDL_Event* e, resources* r, table_tiles* tiles,
             }
             init_table_tiles(tiles, r->stages->tables + r->hud->map);
             *backup = *tiles;
+            action->active = 0;
         } else if (key == SDLK_UP)
             r->hud->stage_b = !r->hud->stage_b;
           else if (key == SDLK_DOWN)
