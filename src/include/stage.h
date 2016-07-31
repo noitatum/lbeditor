@@ -58,7 +58,8 @@ typedef struct lb_stages {
 } lb_stages; 
 
 typedef struct table_tiles {
-    u8 tiles[GRID_HEIGHT][GRID_WIDTH];
+    u8 walls[GRID_HEIGHT][GRID_WIDTH];
+    u8 holes[GRID_HEIGHT][GRID_WIDTH];
     table_back backs[TABLE_MAX_BACKS];
     size_t back_count;
 } table_tiles;

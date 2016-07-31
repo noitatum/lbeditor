@@ -16,7 +16,7 @@ typedef struct rgba_color {
 } rgba_color;
 
 SDL_Renderer* initialize_render(SDL_Window* window);
-void render_tiles(SDL_Renderer* renderer, table_tiles* tiles, 
+void render_walls(SDL_Renderer* renderer, table_tiles* tiles, 
                   lb_sprites* sprites);
 void render_all(SDL_Renderer* renderer, lb_sprites* sprites, lb_stages* stages,
                 lb_hud* hud, table_tiles* tiles);

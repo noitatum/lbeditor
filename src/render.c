@@ -135,31 +135,39 @@ void render_back(SDL_Renderer* renderer, table_tiles* tiles) {
 u16 get_surroundings(table_tiles* tiles, size_t y, size_t x) {
     u16 sur = 0; 
     for (size_t i = 0; i < 9; i++) {
-        u8 tile = tiles->tiles[y + sur_offset_y[i]][x + sur_offset_x[i]];
-        sur = (sur << 1) | ((tile & sur_flags[i]) == sur_flags[i]);
+        u8 wall = tiles->walls[y + sur_offset_y[i]][x + sur_offset_x[i]];
+        sur = (sur << 1) | ((wall & sur_flags[i]) == sur_flags[i]);
     }
     return sur;
 }
 
-void render_tiles(SDL_Renderer* renderer, table_tiles* tiles,
+void render_holes(SDL_Renderer* renderer, table_tiles* tiles,
                   lb_sprites* sprites) { 
     for (size_t j = 1; j < GRID_HEIGHT - 1; j++) {
         for (size_t i = 1; i < GRID_WIDTH - 1; i++) {
-            u8 tile = tiles->tiles[j][i];
             SDL_Rect dest = {i * TSIZE, j * TSIZE, TSIZE, TSIZE};
-            size_t hole = hole_order[tile >> 4];
+            size_t hole = hole_order[tiles->holes[j][i]];
             if (hole != 0xF)
                 SDL_RenderCopy(renderer, sprites->holes[hole], NULL, &dest);
-            size_t block = tile & TILE_MASK_BLOCK;
-            if (!block)
+        }
+    }
+}
+
+void render_walls(SDL_Renderer* renderer, table_tiles* tiles,
+                  lb_sprites* sprites) { 
+    for (size_t j = 1; j < GRID_HEIGHT - 1; j++) {
+        for (size_t i = 1; i < GRID_WIDTH - 1; i++) {
+            SDL_Rect dest = {i * TSIZE, j * TSIZE, TSIZE, TSIZE};
+            size_t wall = tiles->walls[j][i];
+            if (!wall)
                 continue;
             // FIXME: This is not how it works in the game
             u16 sur = get_surroundings(tiles, j, i);
-            if (block == TILE_MASK_BLOCK) {
+            if (wall == TILE_MASK_BLOCK) {
                 SDL_Texture* block = sprites->blocks[block_order[sur & 0xFF]];
                 SDL_RenderCopy(renderer, block, NULL, &dest);
             } else {
-                size_t slope = slope_order[block / 3 - 1];
+                size_t slope = slope_order[wall / 3 - 1];
                 size_t index = slope_table[(sur >> (slope * 2)) & 0x7];
                 SDL_Texture* tte = sprites->slopes[index * 4 + slope];
                 SDL_RenderCopy(renderer, tte, NULL, &dest);
@@ -184,7 +192,8 @@ void render_all(SDL_Renderer* renderer, lb_sprites* sprites, lb_stages* stages,
     srand(hud->map);
     render_dust(renderer, sprites);
     render_back(renderer, tiles);
-    render_tiles(renderer, tiles, sprites); 
+    render_holes(renderer, tiles, sprites);
+    render_walls(renderer, tiles, sprites); 
     render_balls(renderer, balls, sprites);
     render_hud(renderer, hud, sprites, stages);
 }

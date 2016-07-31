@@ -29,7 +29,7 @@ SDL_Texture* create_texture_frame(SDL_Renderer* renderer, lb_sprites* sprites) {
     table_tiles tiles;
     memset(&tiles, 0, sizeof(tiles));
     tile_table_lines(&tiles, hud_lines, sizeof(hud_lines) / sizeof(table_line));
-    render_tiles(renderer, &tiles, sprites);
+    render_walls(renderer, &tiles, sprites);
     return hud;
 }
 

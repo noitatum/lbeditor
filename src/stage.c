@@ -11,7 +11,6 @@
 #define FLAG_BODY_BLOCK  0x40
 #define FLAG_BODY_SQUARE 0x00
 #define FLAG_LINE_BLOCK  0x20
-#define HOLE_BIT         0x10
 
 void table_init(FILE* rom, table_full* table) {
     size_t i;
@@ -74,13 +73,13 @@ lb_stages* stages_init(FILE* rom) {
 
 void tile_table_hole(table_tiles* tiles, table_hole* hole) {
     for (size_t j = 0; j < 4; j++)
-        tiles->tiles[hole->y + (j >> 1)][hole->x + (j & 1)] |= HOLE_BIT << j;
+        tiles->holes[hole->y + (j >> 1)][hole->x + (j & 1)] |= 1 << j;
 }
 
 void tile_table_slope(table_tiles* tiles, size_t x, size_t y, u8 slope) {
-    tiles->tiles[y][x] |= slope;
-    if ((tiles->tiles[y][x] & TILE_MASK_BLOCK) % 3) 
-        tiles->tiles[y][x] |= TILE_MASK_BLOCK;
+    tiles->walls[y][x] |= slope;
+    if (tiles->walls[y][x] % 3) 
+        tiles->walls[y][x] |= TILE_MASK_BLOCK;
 }
 
 void tile_table_line(table_tiles* tiles, const table_line* line) {
@@ -95,17 +94,17 @@ void tile_table_line(table_tiles* tiles, const table_line* line) {
             tile_table_slope(tiles, x + 0, y + 0, slope_table[2]);
             tile_table_slope(tiles, x + 1, y + 0, slope_table[3]);
         } else if (line->y & FLAG_BODY_BLOCK) {
-            tiles->tiles[y][x] |= TILE_MASK_BLOCK;
+            tiles->walls[y][x] |= TILE_MASK_BLOCK;
         } else {
             for (size_t j = 0; j < 4; j++)
-                tiles->tiles[y + (j >> 1)][x + (j & 1)] |= TILE_MASK_BLOCK;
+                tiles->walls[y + (j >> 1)][x + (j & 1)] |= TILE_MASK_BLOCK;
         }
     } else if (type == TYPE_HORIZONTAL) {
         for (size_t j = x; j <= line->end; j++)
-            tiles->tiles[y][j] |= TILE_MASK_BLOCK;
+            tiles->walls[y][j] |= TILE_MASK_BLOCK;
     } else if (type == TYPE_VERTICAL) {
         for (size_t j = y; j <= line->end; j++)
-            tiles->tiles[j][x] |= TILE_MASK_BLOCK;
+            tiles->walls[j][x] |= TILE_MASK_BLOCK;
     } else {
         u8 tile = slope_table[line->y >> 6];
         if (line->y & FLAG_LINE_BLOCK)
