@@ -121,10 +121,10 @@ void render_dust(SDL_Renderer* renderer, lb_sprites* sprites) {
             SDL_RenderCopy(renderer, sprites->dusts[3], NULL, &dest);
 }
 
-void render_back(SDL_Renderer* renderer, table_full* table) {
+void render_back(SDL_Renderer* renderer, table_tiles* tiles) {
     set_render_color(renderer, NES_PALETTE[0x09]);
-    for (size_t i = 0; i < table->back_count; i++) {
-        table_back* b = table->backs + i;
+    for (size_t i = 0; i < tiles->back_count; i++) {
+        table_back* b = tiles->backs + i;
         SDL_Rect rect = {b->x1 * TSIZE, b->y1 * TSIZE, 
                          (b->x2 - b->x1 + 1) * TSIZE, 
                          (b->y2 - b->y1 + 1) * TSIZE};
@@ -178,14 +178,15 @@ void render_balls(SDL_Renderer* renderer, stage_ball* balls,
     }
 }
 
-void render_stage(SDL_Renderer* renderer, lb_sprites* sprites, 
-                  lb_stages* stages, lb_hud* hud, table_tiles* tiles) {
+void render_all(SDL_Renderer* renderer, lb_sprites* sprites, lb_stages* stages,
+                lb_hud* hud, table_tiles* tiles) {
+    stage_ball* balls = stages->balls[hud->map + TABLE_COUNT * hud->stage_b];
     srand(hud->map);
     render_dust(renderer, sprites);
-    render_back(renderer, stages->tables + hud->map);
+    render_back(renderer, tiles);
     render_tiles(renderer, tiles, sprites); 
-    stage_ball* balls = stages->balls[hud->map + TABLE_COUNT * hud->stage_b];
     render_balls(renderer, balls, sprites);
+    render_hud(renderer, hud, sprites, stages);
 }
 
 SDL_Renderer* initialize_render(SDL_Window* window) {

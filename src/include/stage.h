@@ -59,14 +59,18 @@ typedef struct lb_stages {
 
 typedef struct table_tiles {
     u8 tiles[GRID_HEIGHT][GRID_WIDTH];
+    table_back backs[TABLE_MAX_BACKS];
+    size_t back_count;
 } table_tiles;
 
 lb_stages* stages_init(FILE* rom);
 void init_table_tiles(table_tiles* tiles, table_full* table);
 void tile_table_lines(table_tiles* tiles, const table_line* lines, size_t count);
-int table_add_hole(lb_stages* stages, table_full* table, table_tiles* tiles, 
-                   size_t x, size_t y);
-int table_add_line(lb_stages* stages, table_full* table, table_tiles* tiles,
-                   size_t x1, size_t y1, size_t x2, size_t y2, size_t tool);
-int table_add_back(lb_stages* stages, table_full* table,
+int table_add_back(table_full* table, table_tiles* tiles,
                    size_t x1, size_t y1, size_t x2, size_t y2);
+int table_add_hole(table_full* table, table_tiles* tiles, size_t x, size_t y);
+int table_add_line(table_full* table, table_tiles* tiles,
+                   size_t x1, size_t y1, size_t x2, size_t y2, size_t tool);
+void table_increment_backs(lb_stages* stages, table_full* table);
+void table_increment_holes(lb_stages* stages, table_full* table);
+void table_increment_lines(lb_stages* stages, table_full* table);

@@ -129,41 +129,47 @@ void init_table_tiles(table_tiles* tiles, table_full* table) {
     tile_table_lines(tiles, table->lines, table->line_count);
     for (size_t i = 0; i < table->hole_count; i++)
         tile_table_hole(tiles, table->holes + i);
+    memcpy(tiles->backs, table->backs, sizeof(table->backs));
+    tiles->back_count = table->back_count;
 }
 
-int table_add_back(lb_stages* stages, table_full* table,
+int table_add_back(table_full* table, table_tiles* tiles,
                    size_t x1, size_t y1, size_t x2, size_t y2) {
     if (table->back_count == TABLE_MAX_BACKS)
         return -1;
-    table_back* back = table->backs + table->back_count;
     size_t tx1 = x1, tx2 = x2, ty1 = y1, ty2 = y2;
     if (x1 > x2)
         tx1 = x2, tx2 = x1;
     if (y1 > y2)
         ty1 = y2, ty2 = y1;
-    *back = (table_back) {tx1, ty1, tx2, ty2};
+    table->backs[table->back_count] = (table_back) {tx1, ty1, tx2, ty2};
+    tiles->backs[table->back_count] = (table_back) {tx1, ty1, tx2, ty2};
+    tiles->back_count++;
+    return 0;
+}
+
+void table_increment_backs(lb_stages* stages, table_full* table) {
     table->back_count++;
     table->byte_count += sizeof(table_back);
     stages->byte_count += sizeof(table_back);
-    return 0;
 }
 
-int table_add_hole(lb_stages* stages, table_full* table, table_tiles* tiles, 
-                   size_t x, size_t y) {
+int table_add_hole(table_full* table, table_tiles* tiles, size_t x, size_t y) {
     if (table->hole_count == TABLE_MAX_HOLES)
         return -1;
-    if (tiles->tiles[y][x] & HOLE_BIT)
-        return 0;
     table_hole* hole = table->holes + table->hole_count; 
     *hole = (table_hole) {x, y};
     tile_table_hole(tiles, hole);
-    table->hole_count++;
-    table->byte_count += sizeof(table_hole);
-    stages->byte_count += sizeof(table_hole);
     return 0;
 }
 
-int table_add_line(lb_stages* stages, table_full* table, table_tiles* tiles,
+void table_increment_holes(lb_stages* stages, table_full* table) {
+    table->hole_count++;
+    table->byte_count += sizeof(table_hole);
+    stages->byte_count += sizeof(table_hole);
+}
+
+int table_add_line(table_full* table, table_tiles* tiles,
                    size_t x1, size_t y1, size_t x2, size_t y2, size_t tool) {
     if (table->line_count == TABLE_MAX_LINES)
         return -1;
@@ -171,6 +177,7 @@ int table_add_line(lb_stages* stages, table_full* table, table_tiles* tiles,
     size_t block = FLAG_LINE_BLOCK, type = TYPE_DIAGONAL;
     if ((x1 == x2 && y1 == y2 && tool == TOOL_BLOCK) ||
         tool == TOOL_SLANT || tool == TOOL_SQUARE) {
+        x = x2, y = y2;
         if (tool == TOOL_BLOCK)
             block = FLAG_BODY_BLOCK;
         else if (tool == TOOL_SLANT)
@@ -197,8 +204,13 @@ int table_add_line(lb_stages* stages, table_full* table, table_tiles* tiles,
     table_line* line = table->lines + table->line_count;
     *line = (table_line) {x | type, y | block, end};
     tile_table_line(tiles, line);
-    table->line_count++;
-    table->byte_count += bytes;
-    stages->byte_count += bytes;
     return 0;
+}
+
+void table_increment_lines(lb_stages* stages, table_full* table) {
+    size_t bts = sizeof(table_line) -
+                 ((table->lines[table->line_count].x & TYPE_BODY) == TYPE_BODY);
+    table->line_count++;
+    table->byte_count += bts;
+    stages->byte_count += bts;
 }

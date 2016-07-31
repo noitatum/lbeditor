@@ -16,10 +16,10 @@ typedef struct rgba_color {
 } rgba_color;
 
 SDL_Renderer* initialize_render(SDL_Window* window);
-void render_stage(SDL_Renderer* renderer, lb_sprites* sprites, 
-                  lb_stages* stages, lb_hud* hud, table_tiles* tiles);
 void render_tiles(SDL_Renderer* renderer, table_tiles* tiles, 
                   lb_sprites* sprites);
+void render_all(SDL_Renderer* renderer, lb_sprites* sprites, lb_stages* stages,
+                lb_hud* hud, table_tiles* tiles);
 void set_render_color(SDL_Renderer* renderer, rgba_color color);
 rgba_color get_color(u8 color); 
 void printf_pos(SDL_Renderer* renderer, lb_sprites* sprites, 

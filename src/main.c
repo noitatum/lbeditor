@@ -18,7 +18,7 @@ typedef struct resources {
 } resources;
 
 typedef struct tool_action {
-    size_t active, tool, x, y;
+    size_t active, tool, x1, y1, x2, y2;
 } action_tool;
 
 void resources_cleanup(resources* res) {
@@ -52,8 +52,21 @@ SDL_Window* initialize_sdl() {
                             SCREEN_WIDTH, SCREEN_HEIGHT, 0);
 }
 
+void handle_action(table_full* table, table_tiles* tiles, action_tool* action) {
+    int err = 0;
+    if (action->tool == TOOL_HOLE)
+        err = table_add_hole(table, tiles, action->x2, action->y2);
+    else if (action->tool == TOOL_BACK)
+        err = table_add_back(table, tiles, action->x1, action->y1
+                             action->x2, action->y2);
+    else if (action->tool <= TOOL_BACK)
+        err = table_add_line(table, tiles, action->x1, action->y1,
+                             action->x2, action->y2, action->tool);
+    action->active = (err == 0);
+}
+
 void handle_event(SDL_Event* e, resources* r, table_tiles* tiles,
-                  action_tool* action) {
+                  table_tiles* backup, action_tool* action) {
     table_full* table = r->stages->tables + r->hud->map;
     if (e->type == SDL_KEYDOWN) {
         SDL_Keycode key = e->key.keysym.sym;
@@ -68,32 +81,41 @@ void handle_event(SDL_Event* e, resources* r, table_tiles* tiles,
                 r->hud->map--;
             }
             init_table_tiles(tiles, r->stages->tables + r->hud->map);
+            *backup = *tiles;
         } else if (key == SDLK_UP)
             r->hud->stage_b = !r->hud->stage_b;
           else if (key == SDLK_DOWN)
             r->hud->toolbox = !r->hud->toolbox;
     } else if (e->type == SDL_MOUSEBUTTONDOWN) {
-        size_t x = e->button.x, y = e->button.y;
+        size_t x = e->button.x / TSIZE, y = e->button.y / TSIZE;
         if (e->button.button == SDL_BUTTON_LEFT) {
-            if (!in_rect(map_area, x, y)) {
-                hud_click(r->hud, x, y);
+            if (!in_rect(map_area, e->button.x, e->button.y)) {
+                hud_click(r->hud, e->button.x, e->button.y);
                 return;
             }
-            *action = (action_tool) {1, hud_tool(r->hud), x / TSIZE, y / TSIZE};
+            *action = (action_tool) {1, hud_tool(r->hud), x, y, x, y};
+            handle_action(table, tiles, action);
         } else if (e->button.button == SDL_BUTTON_RIGHT) {
+            *tiles = *backup;
             action->active = 0;
         }
+    } else if (e->type == SDL_MOUSEMOTION) {
+        size_t x = e->motion.x / TSIZE, y = e->motion.y / TSIZE;
+        if ((x != action->x2 || y != action->y2) &&
+            action->active && in_rect(map_area, e->button.x, e->button.y)) {
+            action->x2 = x, action->y2 = y;
+            *tiles = *backup;
+            handle_action(table, tiles, action);
+        }
     } else if (e->type == SDL_MOUSEBUTTONUP) {
-        size_t x = e->button.x / TSIZE, y = e->button.y / TSIZE;
-        if (e->button.button == SDL_BUTTON_LEFT &&
-            in_rect(map_area, e->button.x, e->button.y) && action->active) {
+        if (action->active && e->button.button == SDL_BUTTON_LEFT) {
             if (action->tool == TOOL_HOLE)
-                table_add_hole(r->stages, table, tiles, action->x, action->y);
+                table_increment_holes(r->stages, table);
             else if (action->tool == TOOL_BACK)
-                table_add_back(r->stages, table, action->x, action->y, x, y);
-            else
-                table_add_line(r->stages, table, tiles,
-                               action->x, action->y, x, y, action->tool);
+                table_increment_backs(r->stages, table);
+            else if (action->tool <= TOOL_BACK)
+                table_increment_lines(r->stages, table);
+            *backup = *tiles;
             action->active = 0;
         }
     }
@@ -119,16 +141,16 @@ int main(int argc, char* argv[]) {
         exit_error(&r);
     if (!(r.hud = hud_init(r.renderer, r.sprites)))
         exit_error(&r);
-    table_tiles tiles;
+    table_tiles tiles, backup;
     SDL_Event e = {0};
     action_tool action = {0};
     init_table_tiles(&tiles, r.stages->tables);
+    backup = tiles;
     SDL_SetRenderTarget(r.renderer, NULL);
     while (e.type != SDL_QUIT) {
         SDL_WaitEvent(&e);
-        handle_event(&e, &r, &tiles, &action);
-        render_stage(r.renderer, r.sprites, r.stages, r.hud, &tiles);
-        render_hud(r.renderer, r.hud, r.sprites, r.stages);
+        handle_event(&e, &r, &tiles, &backup, &action);
+        render_all(r.renderer, r.sprites, r.stages, r.hud, &tiles);
         SDL_SetRenderDrawColor(r.renderer, 0x00, 0xFF, 0x00, 0xFF);
         SDL_RenderDrawRect(r.renderer, &map_area);
         SDL_RenderPresent(r.renderer);

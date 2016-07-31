@@ -84,9 +84,9 @@ void render_hud(SDL_Renderer* renderer, lb_hud* hud,
         SDL_RenderCopy(renderer, hud->tools, NULL, &toolbox);
     else
         SDL_RenderCopy(renderer, hud->balls, NULL, &toolbox);
-    printf_pos(renderer, sprites, 0xD, 0x2, 
-        "map %02i byte %i\nstages line %i\n%02i %02i  hole %i\n       back %i\n"
-        , hud->map, table->byte_count, table->line_count, table->stage_a + 1, 
+    printf_pos(renderer, sprites, 13, 2,
+    "map %02i byte %i\nstages line %i\n%02i %02i  hole %i\n       back %i\n",
+        hud->map, table->byte_count, table->line_count, table->stage_a + 1,
         table->stage_b + 1, table->hole_count, table->back_count);
     SDL_Rect selected = {BSIZE * (hud->tool % 5) + toolbox.x, 
                          BSIZE * (hud->tool / 5) + toolbox.y, BSIZE, BSIZE};
