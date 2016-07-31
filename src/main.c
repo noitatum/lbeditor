@@ -53,40 +53,26 @@ SDL_Window* initialize_sdl() {
 }
 
 void handle_action(table_full* table, table_tiles* tiles, action_tool* action) {
-    int err = 0;
     if (action->tool == TOOL_HOLE)
-        err = table_add_hole(table, tiles, action->x2, action->y2);
+        action->active = !table_add_hole(table, tiles, action->x2, action->y2);
     else if (action->tool == TOOL_BACK)
-        err = table_add_back(table, tiles, action->x1, action->y1,
-                             action->x2, action->y2);
+        action->active = !table_add_back(table, tiles, action->x1, action->y1,
+                                         action->x2, action->y2);
     else if (action->tool <= TOOL_BACK)
-        err = table_add_line(table, tiles, action->x1, action->y1,
-                             action->x2, action->y2, action->tool);
-    action->active = (err == 0);
+        action->active = !table_add_line(table, tiles, action->x1, action->y1,
+                                         action->x2, action->y2, action->tool);
 }
 
 void handle_event(SDL_Event* e, resources* r, table_tiles* tiles,
                   table_tiles* backup, action_tool* action) {
     table_full* table = r->stages->tables + r->hud->map;
     if (e->type == SDL_KEYDOWN) {
-        SDL_Keycode key = e->key.keysym.sym;
-        if (key == SDLK_LEFT || key == SDLK_RIGHT) {
-            if (key == SDLK_RIGHT) {
-                r->hud->map++;
-                if (r->hud->map == TABLE_COUNT)
-                    r->hud->map = 0;
-            } else {
-                if (r->hud->map == 0)
-                    r->hud->map = TABLE_COUNT;
-                r->hud->map--;
-            }
+        hud_key(r->hud, e->key.keysym.sym);
+        if (table != r->stages->tables + r->hud->map) {
             init_table_tiles(tiles, r->stages->tables + r->hud->map);
             *backup = *tiles;
             action->active = 0;
-        } else if (key == SDLK_UP)
-            r->hud->stage_b = !r->hud->stage_b;
-          else if (key == SDLK_DOWN)
-            r->hud->toolbox = !r->hud->toolbox;
+        }
     } else if (e->type == SDL_MOUSEBUTTONDOWN) {
         size_t x = e->button.x / TSIZE, y = e->button.y / TSIZE;
         if (e->button.button == SDL_BUTTON_LEFT) {

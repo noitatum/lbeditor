@@ -99,6 +99,25 @@ void hud_click(lb_hud* hud, size_t x, size_t y) {
         hud->tool = (x - toolbox.x) / BSIZE + ((y - toolbox.y) / BSIZE) * 5;
 }
 
+void hud_key(lb_hud* hud, SDL_Keycode key) {
+    if (key == SDLK_LEFT || key == SDLK_RIGHT) {
+        if (key == SDLK_RIGHT) {
+            hud->map++;
+            if (hud->map == TABLE_COUNT)
+                hud->map = 0;
+        } else {
+            if (hud->map == 0)
+                hud->map = TABLE_COUNT;
+            hud->map--;
+        }
+    } else if (key == SDLK_UP)
+        hud->stage_b = !hud->stage_b;
+      else if (key == SDLK_DOWN)
+        hud->toolbox = !hud->toolbox;
+      else if (key >= SDLK_0 && key <= SDLK_9)
+        hud->tool = (key + 1) % TOOLBOX_COUNT;
+}
+
 size_t hud_tool(lb_hud* hud) {
     return hud->tool + hud->toolbox * TOOLBOX_COUNT;
 }
