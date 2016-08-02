@@ -20,10 +20,6 @@ const rgba_color NES_PALETTE[64] = {
     {160,214,228,255}, {160,162,160,255}, {  0,  0,  0,  0}, {  0,  0,  0,  0},
 };
 
-const size_t hole_order[16] = {0xF, 0x2, 0x3, 0x7, 0x1, 0x6, 0xC, 0xA, 
-                               0x0, 0xD, 0x4, 0xB, 0x5, 0x9, 0x8, 0xE};
-const size_t slope_order[4] = {0, 1, 3, 2};
-const size_t slope_table[8] = {4, 3, 4, 3, 2, 1, 2, 0};
 const size_t block_order[256] = {
     // 0x00
     0x02, 0x28, 0x02, 0x28, 0x29, 0x24, 0x29, 0x20,
@@ -74,10 +70,9 @@ const size_t block_order[256] = {
     0x22, 0x13, 0x22, 0x13, 0x16, 0x0B, 0x16, 0x07,
     0x22, 0x13, 0x22, 0x13, 0x12, 0x06, 0x12, 0x01,
 };
-
-const int sur_offset_x[9] = {-1, -1, 0, 1, 1,  1,  0, -1, -1};
-const int sur_offset_y[9] = { 0,  1, 1, 1, 0, -1, -1, -1,  0};
-const u8 sur_flags[9] = {0x4, 0x6, 0x2, 0x3, 0x1, 0x9, 0x8, 0xC, 0x4};
+const size_t hole_order[16] = {0xF, 0x2, 0x3, 0x7, 0x1, 0x6, 0xC, 0xA, 
+                               0x0, 0xD, 0x4, 0xB, 0x5, 0x9, 0x8, 0xE};
+const size_t slope_order[4] = {0, 1, 3, 2};
 
 rgba_color get_color(u8 color) { 
     return NES_PALETTE[color & 0x3F];
@@ -145,10 +140,13 @@ void render_holes(SDL_Renderer* renderer, table_tiles* tiles,
 }
 
 u16 get_surroundings(table_tiles* tiles, size_t y, size_t x) {
+    static const int offset_x[9] = {-1, -1, 0, 1, 1,  1,  0, -1, -1};
+    static const int offset_y[9] = { 0,  1, 1, 1, 0, -1, -1, -1,  0};
+    static const u8 flags[9] = {0x4, 0x6, 0x2, 0x3, 0x1, 0x9, 0x8, 0xC, 0x4};
     u16 sur = 0;
     for (size_t i = 0; i < 9; i++) {
-        u8 wall = tiles->walls[y + sur_offset_y[i]][x + sur_offset_x[i]];
-        sur = (sur << 1) | ((wall & sur_flags[i]) == sur_flags[i]);
+        u8 wall = tiles->walls[y + offset_y[i]][x + offset_x[i]];
+        sur = (sur << 1) | ((wall & flags[i]) == flags[i]);
     }
     return sur;
 }
@@ -167,6 +165,7 @@ void render_walls(SDL_Renderer* renderer, table_tiles* tiles,
                 SDL_Texture* block = sprites->blocks[block_order[sur & 0xFF]];
                 SDL_RenderCopy(renderer, block, NULL, &dest);
             } else {
+                static const size_t slope_table[8] = {4, 3, 4, 3, 2, 1, 2, 0};
                 size_t slope = slope_order[wall / 3 - 1];
                 size_t index = slope_table[(sur >> (slope * 2)) & 0x7];
                 SDL_Texture* tte = sprites->slopes[index * 4 + slope];
