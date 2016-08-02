@@ -1,5 +1,5 @@
 # Object files
-OBJS = main.o sprite.o stage.o render.o hud.o 
+OBJS = main.o sprite.o stage.o render.o hud.o action.o
 # Object full path
 OBJS_FULL = $(addprefix $(OBJ_DIR), $(OBJS))
 # Compiler
