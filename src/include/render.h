@@ -6,10 +6,10 @@
 #include <hud.h>
 #include <integer.h>
 
-#define SCREEN_WIDTH 512
-#define SCREEN_HEIGHT 480
-#define TSIZE 16
-#define BSIZE (TSIZE * 2)
+#define TSIZE         16
+#define BSIZE         (TSIZE * 2)
+#define SCREEN_WIDTH  (TSIZE * GRID_WIDTH)
+#define SCREEN_HEIGHT (TSIZE * GRID_HEIGHT)
 
 typedef struct rgba_color {
     u8 r, g, b, a;

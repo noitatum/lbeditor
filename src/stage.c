@@ -76,10 +76,10 @@ void tile_table_hole(table_tiles* tiles, table_hole* hole) {
         tiles->holes[hole->y + (j >> 1)][hole->x + (j & 1)] |= 1 << j;
 }
 
-void tile_table_slope(table_tiles* tiles, size_t x, size_t y, u8 slope) {
-    tiles->walls[y][x] |= slope;
-    if (tiles->walls[y][x] % 3) 
-        tiles->walls[y][x] |= TILE_MASK_BLOCK;
+void tile_table_wall(table_tiles* tiles, size_t x, size_t y, u8 wall) {
+    tiles->walls[y][x] |= wall;
+    if (tiles->walls[y][x] % 3)
+        tiles->walls[y][x] |= TILE_BLOCK;
 }
 
 void tile_table_line(table_tiles* tiles, const table_line* line) {
@@ -89,32 +89,32 @@ void tile_table_line(table_tiles* tiles, const table_line* line) {
     u8 type = line->x & TYPE_MASK; 
     if (type == TYPE_BODY) {
         if (line->y & FLAG_BODY_SLANT) {
-            tile_table_slope(tiles, x + 1, y + 1, slope_table[0]);
-            tile_table_slope(tiles, x + 0, y + 1, slope_table[1]);
-            tile_table_slope(tiles, x + 0, y + 0, slope_table[2]);
-            tile_table_slope(tiles, x + 1, y + 0, slope_table[3]);
+            tile_table_wall(tiles, x + 1, y + 1, slope_table[0]);
+            tile_table_wall(tiles, x + 0, y + 1, slope_table[1]);
+            tile_table_wall(tiles, x + 0, y + 0, slope_table[2]);
+            tile_table_wall(tiles, x + 1, y + 0, slope_table[3]);
         } else if (line->y & FLAG_BODY_BLOCK) {
-            tiles->walls[y][x] |= TILE_MASK_BLOCK;
+            tile_table_wall(tiles, x, y, TILE_BLOCK);
         } else {
             for (size_t j = 0; j < 4; j++)
-                tiles->walls[y + (j >> 1)][x + (j & 1)] |= TILE_MASK_BLOCK;
+                tile_table_wall(tiles, x + (j & 1), y + (j >> 1), TILE_BLOCK);
         }
     } else if (type == TYPE_HORIZONTAL) {
         for (size_t j = x; j <= line->end; j++)
-            tiles->walls[y][j] |= TILE_MASK_BLOCK;
+            tile_table_wall(tiles, j, y, TILE_BLOCK);
     } else if (type == TYPE_VERTICAL) {
         for (size_t j = y; j <= line->end; j++)
-            tiles->walls[j][x] |= TILE_MASK_BLOCK;
+            tile_table_wall(tiles, x, j, TILE_BLOCK);
     } else {
         u8 tile = slope_table[line->y >> 6];
         if (line->y & FLAG_LINE_BLOCK)
-            tile = TILE_MASK_BLOCK;
+            tile = TILE_BLOCK;
         if (line->end > y)
             for (size_t j = x, k = y; k <= line->end; j++, k++)
-                tile_table_slope(tiles, j, k, tile);
+                tile_table_wall(tiles, j, k, tile);
         else
             for (size_t j = x, k = y; k >= line->end; j++, k--)
-                tile_table_slope(tiles, j, k, tile);
+                tile_table_wall(tiles, j, k, tile);
     }
 }
 
@@ -173,16 +173,16 @@ int table_add_line(table_full* table, table_tiles* tiles,
     if (table->line_count == TABLE_MAX_LINES)
         return -1;
     size_t bytes = sizeof(table_line), x = x1, y = y1, end = y2;
-    size_t block = FLAG_LINE_BLOCK, type = TYPE_DIAGONAL;
+    size_t wall = FLAG_LINE_BLOCK, type = TYPE_DIAGONAL;
     if ((x1 == x2 && y1 == y2 && tool == TOOL_BLOCK) ||
         tool == TOOL_SLANT || tool == TOOL_SQUARE) {
         x = x2, y = y2;
         if (tool == TOOL_BLOCK)
-            block = FLAG_BODY_BLOCK;
+            wall = FLAG_BODY_BLOCK;
         else if (tool == TOOL_SLANT)
-            block = FLAG_BODY_SLANT;
+            wall = FLAG_BODY_SLANT;
         else
-            block = FLAG_BODY_SQUARE;
+            wall = FLAG_BODY_SQUARE;
         bytes--;
         type = TYPE_BODY;
     } else if (y1 == y2 && tool == TOOL_BLOCK) {
@@ -196,12 +196,12 @@ int table_add_line(table_full* table, table_tiles* tiles,
         type = TYPE_VERTICAL;
     } else {
         if (tool != TOOL_BLOCK)
-            block = tool << 6;
+            wall = tool << 6;
         if (x1 > x2)
             x = x1 - (y1 > y2 ? y1 - y2 : y2 - y1), y = y2, end = y1;
     }
     table_line* line = table->lines + table->line_count;
-    *line = (table_line) {x | type, y | block, end};
+    *line = (table_line) {x | type, y | wall, end};
     tile_table_line(tiles, line);
     return 0;
 }

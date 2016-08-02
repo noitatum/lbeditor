@@ -9,7 +9,7 @@
 #define TABLE_MAX_BACKS 32
 #define TABLE_MAX_HOLES 256
 #define BALL_COUNT      8
-#define TILE_MASK_BLOCK 0x0F
+#define TILE_BLOCK      0x0F
 #define SLOPE_NW        0x00
 #define SLOPE_NE        0x40
 #define SLOPE_SE        0x80
@@ -58,7 +58,7 @@ typedef struct lb_stages {
 } lb_stages; 
 
 typedef struct table_tiles {
-    u8 walls[GRID_HEIGHT][GRID_WIDTH];
+    u16 walls[GRID_HEIGHT][GRID_WIDTH];
     u8 holes[GRID_HEIGHT][GRID_WIDTH];
     table_back backs[TABLE_MAX_BACKS];
     size_t back_count;

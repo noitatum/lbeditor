@@ -132,15 +132,6 @@ void render_back(SDL_Renderer* renderer, table_tiles* tiles) {
     }
 }
 
-u16 get_surroundings(table_tiles* tiles, size_t y, size_t x) {
-    u16 sur = 0; 
-    for (size_t i = 0; i < 9; i++) {
-        u8 wall = tiles->walls[y + sur_offset_y[i]][x + sur_offset_x[i]];
-        sur = (sur << 1) | ((wall & sur_flags[i]) == sur_flags[i]);
-    }
-    return sur;
-}
-
 void render_holes(SDL_Renderer* renderer, table_tiles* tiles,
                   lb_sprites* sprites) { 
     for (size_t j = 1; j < GRID_HEIGHT - 1; j++) {
@@ -153,6 +144,15 @@ void render_holes(SDL_Renderer* renderer, table_tiles* tiles,
     }
 }
 
+u16 get_surroundings(table_tiles* tiles, size_t y, size_t x) {
+    u16 sur = 0;
+    for (size_t i = 0; i < 9; i++) {
+        u8 wall = tiles->walls[y + sur_offset_y[i]][x + sur_offset_x[i]];
+        sur = (sur << 1) | ((wall & sur_flags[i]) == sur_flags[i]);
+    }
+    return sur;
+}
+
 void render_walls(SDL_Renderer* renderer, table_tiles* tiles,
                   lb_sprites* sprites) { 
     for (size_t j = 1; j < GRID_HEIGHT - 1; j++) {
@@ -163,7 +163,7 @@ void render_walls(SDL_Renderer* renderer, table_tiles* tiles,
                 continue;
             // FIXME: This is not how it works in the game
             u16 sur = get_surroundings(tiles, j, i);
-            if (wall == TILE_MASK_BLOCK) {
+            if (wall == TILE_BLOCK) {
                 SDL_Texture* block = sprites->blocks[block_order[sur & 0xFF]];
                 SDL_RenderCopy(renderer, block, NULL, &dest);
             } else {
