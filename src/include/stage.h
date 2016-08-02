@@ -83,4 +83,5 @@ int table_add_back(table_full* table, table_tiles* tiles,
 void table_remove_line(table_full* table, table_tiles* tiles, u8* backup);
 void table_remove_hole(table_full* table, table_tiles* tiles, u8* backup);
 void table_remove_back(table_full* table, table_tiles* tiles);
+void table_clear(table_full* table, table_tiles* tiles);
 void init_table_tiles(table_tiles* tiles, table_full* table);

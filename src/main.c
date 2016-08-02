@@ -73,14 +73,18 @@ void exit_error(resources* res) {
 void handle_event(SDL_Event* e, resources* r, table_tiles* tiles) {
     table_full* table = r->stages->tables + r->hud->map;
     if (e->type == SDL_KEYDOWN) {
-        hud_key(r->hud, e->key.keysym.sym);
+        SDL_Keycode key = e->key.keysym.sym;
+        hud_key(r->hud, key);
         if (table != r->stages->tables + r->hud->map) {
             init_table_tiles(tiles, r->stages->tables + r->hud->map);
             action_history_clear(r->history);
         }
-        if (e->key.keysym.sym == SDLK_u) {
+        if (key == SDLK_u) {
             action_history_undo(r->history, table, tiles);
             r->history->active = 0;
+        } else if (key == SDLK_DELETE) {
+            table_clear(table, tiles);
+            action_history_clear(r->history);
         }
     } else if (e->type == SDL_MOUSEBUTTONDOWN) {
         size_t x = e->button.x / TSIZE, y = e->button.y / TSIZE;

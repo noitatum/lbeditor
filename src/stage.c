@@ -223,6 +223,13 @@ void table_remove_back(table_full* table, table_tiles* tiles) {
     tiles->back_count--;
 }
 
+void table_clear(table_full* table, table_tiles* tiles) {
+    size_t sa = table->stage_a, sb = table->stage_b;
+    memset(table, 0, sizeof(table_full));
+    table->stage_a = sa, table->stage_b = sb;
+    memset(tiles, 0, sizeof(table_tiles));
+}
+
 void tile_table_lines(table_tiles* tiles, const table_line* lines, size_t count) {
     for (size_t i = 0; i < count; i++)
         tile_table_line(tiles, lines + i, NULL, 0);
