@@ -87,15 +87,10 @@ void history_redo(history* history, table_full* table, table_tiles* tiles,
                   size_t* invalid_layer) {
     if (history->count == 0)
         return;
-    size_t index = HISTORY_SIZE - 1;
-    if (history->index > 0)
-        index = history->index - 1;
-    action_tool* action = history->history + index;
-    if (x != action->x2 || y != action->y2) {
-        history_undo(history, table, tiles, balls, invalid_layer);
-        action->x2 = x, action->y2 = y;
-        history_apply(history, table, tiles, balls, invalid_layer);
-    }
+    history_undo(history, table, tiles, balls, invalid_layer);
+    action_tool* action = history->history + history->index;
+    action->x2 = x, action->y2 = y;
+    history_apply(history, table, tiles, balls, invalid_layer);
 }
 
 void history_clear(history* history) {
