@@ -182,15 +182,14 @@ void render_balls(SDL_Renderer* renderer, stage_ball* balls,
     for (size_t i = 0; i < BALL_COUNT; i++) {
         if (balls[i].x == 0)
             continue;
-        SDL_Rect dest = {balls[i].y * 2 - 16, balls[i].x * 2 - 16, 32, 32};
+        SDL_Rect dest = {balls[i].x * 2 - 16, balls[i].y * 2 - 16, 32, 32};
         SDL_RenderCopy(renderer, sprites->balls[i], NULL, &dest);
     }
 }
 
 void render_hud(SDL_Renderer* renderer, lb_hud* hud,
-                lb_sprites* sprites, lb_stages* stages) {
+                lb_sprites* sprites, table_full* table) {
     extern const SDL_Rect toolbox;
-    table_full* table = stages->tables + hud->map;
     SDL_RenderCopy(renderer, hud->frame, NULL, &screen_area);
     if (hud->toolbox == TOOLBOX_TABLE)
         SDL_RenderCopy(renderer, hud->tools, NULL, &toolbox);
@@ -209,6 +208,7 @@ void render_hud(SDL_Renderer* renderer, lb_hud* hud,
 void render_invalid(lb_render* render, lb_sprites* sprites, lb_stages* stages,
                     lb_hud* hud, table_tiles* tiles) {
     stage_ball* balls = stages->balls[hud->map + TABLE_COUNT * hud->stage_b];
+    table_full* table = stages->tables + hud->map;
     // Clear invalid layers
     for (size_t i = 0; i < LAYER_COUNT; i++) {
         if (render->invalid_layers & (1 << i)) {
@@ -241,7 +241,7 @@ void render_invalid(lb_render* render, lb_sprites* sprites, lb_stages* stages,
     }
     if (render->invalid_layers & (1 << LAYER_HUD)) {
         SDL_SetRenderTarget(render->renderer, render->layers[LAYER_HUD]);
-        render_hud(render->renderer, hud, sprites, stages);
+        render_hud(render->renderer, hud, sprites, table);
     }
     render->invalid_layers = 0;
 }
@@ -270,7 +270,8 @@ void printf_pos(SDL_Renderer* renderer, lb_sprites* sprites,
             target.y += TSIZE;
             continue;
         }
-        SDL_RenderCopy(renderer, sprites->letters[buffer[i] - 32], 0, &target);
+        SDL_Texture* letter = sprites->letters[LETTER(buffer[i])];
+        SDL_RenderCopy(renderer, letter, 0, &target);
         target.x += TSIZE;
     }
 }

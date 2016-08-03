@@ -124,7 +124,8 @@ int table_add_line(table_full* table, table_tiles* tiles, size_t x1, size_t y1,
                     size_t x2, size_t y2, size_t tool, u8* backup) {
     if (table->line_count == TABLE_MAX_LINES)
         return -1;
-    size_t bytes = sizeof(table_line), x = x1, y = y1, end = y2;
+    size_t bytes = sizeof(table_line);
+    ssize_t x = x1, y = y1, end = y2;
     size_t wall = FLAG_LINE_BLOCK, type = TYPE_DIAGONAL;
     if ((x1 == x2 && y1 == y2 && tool == TOOL_BLOCK) ||
         tool == TOOL_SLANT || tool == TOOL_SQUARE) {
@@ -149,8 +150,16 @@ int table_add_line(table_full* table, table_tiles* tiles, size_t x1, size_t y1,
     } else {
         if (tool != TOOL_BLOCK)
             wall = tool << 6;
+        // Revert line if necessary
         if (x1 > x2)
             x = x1 - (y1 > y2 ? y1 - y2 : y2 - y1), y = y2, end = y1;
+        // Check bounds and correct if necessary
+        ssize_t sign = (end > y) * 2 - 1;
+        if (x < MAP_MIN_X) {
+            y += sign * (MAP_MIN_X - x);
+            x = MAP_MIN_X;
+        } else if (x + sign * (end - y) > MAP_MAX_X)
+            end = y + sign * (MAP_MAX_X - x);
     }
     table_line* line = table->lines + table->line_count;
     *line = (table_line) {x | type, y | wall, end};

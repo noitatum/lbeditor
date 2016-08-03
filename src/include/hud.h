@@ -11,6 +11,10 @@
 #define TOOL_SQUARE 6
 #define TOOL_HOLE   7
 #define TOOL_BACK   8
+#define TOOL_NEXT   9
+#define TOOL_BALL_0 10
+#define IS_TOOL_LINE(tool) ((tool) < TOOL_BACK)
+#define IS_TOOL_BALL(tool) ((tool) >= TOOL_BALL_0 && (tool) < TOOL_BALL_0 + 8)
 
 typedef struct lb_hud {
     size_t tool, toolbox, map, stage_b; 
@@ -20,8 +24,6 @@ typedef struct lb_hud {
 } lb_hud;
 
 size_t in_rect(SDL_Rect r, ssize_t x, ssize_t y);
-void render_hud(SDL_Renderer* renderer, lb_hud* hud, 
-                lb_sprites* sprites, lb_stages* stages);
 lb_hud* hud_init(SDL_Renderer* renderer, lb_sprites* sprites);
 void hud_destroy(lb_hud* hud);
 void hud_click(lb_hud* hud, size_t x, size_t y, size_t* invalid_layers);

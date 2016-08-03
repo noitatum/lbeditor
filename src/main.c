@@ -7,7 +7,9 @@
 #include <hud.h>
 #include <action.h>
 
-const SDL_Rect map_area = {3 * TSIZE, 8 * TSIZE, 26 * TSIZE, 19 * TSIZE};
+const SDL_Rect map_area = {MAP_MIN_X * TSIZE, MAP_MIN_Y * TSIZE,
+                           (MAP_MAX_X - MAP_MIN_X + 1) * TSIZE,
+                           (MAP_MAX_Y - MAP_MIN_Y + 1) * TSIZE};
 
 typedef struct resources {
     FILE* rom;
@@ -16,7 +18,7 @@ typedef struct resources {
     lb_sprites* sprites;
     lb_stages* stages;
     lb_hud* hud;
-    action_history* history;
+    history* history;
 } resources;
 
 SDL_Window* initialize_sdl() {
@@ -59,7 +61,7 @@ int resources_init(resources* r, FILE* rom) {
         return -1;
     if (!(r->hud = hud_init(r->render->renderer, r->sprites)))
         return -1;
-    if (!(r->history = action_history_init()))
+    if (!(r->history = history_init()))
         return -1;
     return 0;
 }
@@ -72,6 +74,8 @@ void exit_error(resources* res) {
 
 void handle_event(SDL_Event* e, resources* r, table_tiles* tiles) {
     table_full* table = r->stages->tables + r->hud->map;
+    stage_ball* balls =
+        r->stages->balls[r->hud->map + TABLE_COUNT * r->hud->stage_b];
     size_t* inv = &r->render->invalid_layers;
     if (e->type == SDL_KEYDOWN) {
         SDL_Keycode key = e->key.keysym.sym;
@@ -79,35 +83,35 @@ void handle_event(SDL_Event* e, resources* r, table_tiles* tiles) {
         if (table != r->stages->tables + r->hud->map) {
             // Table changed retile
             init_table_tiles(tiles, r->stages->tables + r->hud->map);
-            action_history_clear(r->history);
+            history_clear(r->history);
         }
         if (key == SDLK_u) {
             // Undo action
-            action_history_undo(r->history, table, tiles, inv);
+            history_undo(r->history, table, tiles, balls, inv);
             r->history->active = 0;
         } else if (key == SDLK_DELETE) {
             // Delete table
             table_clear(table, tiles);
-            action_history_clear(r->history);
+            history_clear(r->history);
             *inv |= LAYER_FLAGS_ALL & ~(1 << LAYER_DUST);
         }
     } else if (e->type == SDL_MOUSEBUTTONDOWN) {
-        size_t x = e->button.x / TSIZE, y = e->button.y / TSIZE;
+        size_t x = e->button.x, y = e->button.y;
         if (e->button.button == SDL_BUTTON_LEFT) {
-            if (!in_rect(map_area, e->button.x, e->button.y)) {
-                hud_click(r->hud, e->button.x, e->button.y, inv);
-                return;
+            if (in_rect(map_area, x, y)) {
+                size_t tool = hud_tool(r->hud);
+                history_do(r->history, table, tiles, balls, tool, x, y, inv);
+            } else {
+                hud_click(r->hud, x, y, inv);
             }
-            size_t tool = hud_tool(r->hud);
-            action_history_do(r->history, table, tiles, tool, x, y, inv);
         } else if (e->button.button == SDL_BUTTON_RIGHT) {
-            action_history_undo(r->history, table, tiles, inv);
+            history_undo(r->history, table, tiles, balls, inv);
             r->history->active = 0;
         }
     } else if (e->type == SDL_MOUSEMOTION) {
-        size_t x = e->motion.x / TSIZE, y = e->motion.y / TSIZE;
-        if (r->history->active && in_rect(map_area, e->button.x, e->button.y))
-            action_history_redo(r->history, table, tiles, x, y, inv);
+        size_t x = e->motion.x, y = e->motion.y;
+        if (r->history->active && in_rect(map_area, x, y))
+            history_redo(r->history, table, tiles, balls, x, y, inv);
     } else if (e->type == SDL_MOUSEBUTTONUP) {
         if (e->button.button == SDL_BUTTON_LEFT)
             r->history->active = 0;

@@ -5,6 +5,10 @@
 
 #define GRID_WIDTH       0x20
 #define GRID_HEIGHT      0x1E
+#define MAP_MIN_X        0x03
+#define MAP_MAX_X        0x1C
+#define MAP_MIN_Y        0x08
+#define MAP_MAX_Y        0x1A
 #define STAGE_COUNT      60
 #define TABLE_COUNT      30
 
@@ -33,7 +37,7 @@
 #define ROM_RAM_OFFSET         0xBFF0
 
 typedef struct stage_ball {
-    u8 x, y;
+    u8 y, x;
 } stage_ball;
 
 typedef struct table_line {

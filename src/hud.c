@@ -29,12 +29,18 @@ SDL_Texture* create_texture_frame(SDL_Renderer* renderer, lb_sprites* sprites) {
     return hud;
 }
 
+void render_texture_next(SDL_Renderer* renderer, lb_sprites* sprites) {
+    static const SDL_Rect target = {TSIZE * 8 + 6, TSIZE * 2 + 2, BSIZE, BSIZE};
+    SDL_RenderCopy(renderer, sprites->letters[LETTER('+')], NULL, &target);
+}
+
 SDL_Texture* create_texture_balls(SDL_Renderer* renderer, lb_sprites* sprites) {
     SDL_Texture* balls = create_texture(renderer, toolbox.w, toolbox.h);
     for (size_t i = 0; i < BALL_COUNT; i++) {
-        SDL_Rect target = {(i & 0x3) * BSIZE, (i >> 2) * BSIZE, BSIZE, BSIZE};
+        SDL_Rect target = {(i % 5) * BSIZE, (i / 5) * BSIZE, BSIZE, BSIZE};
         SDL_RenderCopy(renderer, sprites->balls[i], NULL, &target);
     }
+    render_texture_next(renderer, sprites);
     return balls;
 }
 
@@ -67,14 +73,15 @@ SDL_Texture* create_texture_tools(SDL_Renderer* renderer, lb_sprites* sprites) {
     target.x += TSIZE * 2;
     set_render_color(renderer, get_color(0x09));
     SDL_RenderFillRect(renderer, &target);
-    target.x += TSIZE * 2;
-    SDL_RenderCopy(renderer, sprites->letters['X'], NULL, &target);
+    render_texture_next(renderer, sprites);
     return tools;
 }
 
 void hud_click(lb_hud* hud, size_t x, size_t y, size_t* invalid_layers) {
     if (in_rect(toolbox, x, y)) {
         hud->tool = (x - toolbox.x) / BSIZE + ((y - toolbox.y) / BSIZE) * 5;
+        if (hud->tool == TOOL_NEXT)
+            hud->toolbox = !hud->toolbox;
         *invalid_layers |= 1 << LAYER_HUD;
     }
 }

@@ -3,22 +3,29 @@
 #include <hud.h>
 #include <render.h>
 
-void action_history_apply(action_history* history, table_full* table,
-                          table_tiles* tiles, size_t* invalid_layer) {
+void history_apply(history* history, table_full* table,
+                   table_tiles* tiles, stage_ball* balls, size_t* invalid_layer) {
     action_tool* action = history->history + history->index;
-    if (action->tool == TOOL_HOLE) {
-        history->active = !table_add_hole(table, tiles, action->x2, action->y2,
-                                          action->backup);
-        *invalid_layer |= 1 << LAYER_HOLES;
-    } else if (action->tool == TOOL_BACK) {
-        history->active = !table_add_back(table, tiles, action->x1, action->y1,
-                                         action->x2, action->y2);
-        *invalid_layer |= 1 << LAYER_BACK;
-    } else if (action->tool <= TOOL_BACK) {
-        history->active = !table_add_line(table, tiles, action->x1, action->y1,
-                                          action->x2, action->y2, action->tool,
-                                          action->backup);
-        *invalid_layer |= 1 << LAYER_WALLS;
+    if (IS_TOOL_BALL(action->tool)) {
+        history->active = 1;
+        stage_ball* ball = balls + action->tool - TOOL_BALL_0;
+        ball->x = action->x2 / 2, ball->y = action->y2 / 2;
+        *invalid_layer |= 1 << LAYER_BALLS;
+    } else {
+        size_t x1 = action->x1 / TSIZE, y1 = action->y1 / TSIZE;
+        size_t x2 = action->x2 / TSIZE, y2 = action->y2 / TSIZE;
+        u8* backup = action->backup;
+        if (action->tool == TOOL_HOLE) {
+            history->active = !table_add_hole(table, tiles, x2, y2, backup);
+            *invalid_layer |= 1 << LAYER_HOLES;
+        } else if (action->tool == TOOL_BACK) {
+            history->active = !table_add_back(table, tiles, x1, y1, x2, y2);
+            *invalid_layer |= 1 << LAYER_BACK;
+        } else if (IS_TOOL_LINE(action->tool)) {
+            history->active = !table_add_line(table, tiles, x1, y1, x2, y2,
+                                              action->tool, backup);
+            *invalid_layer |= 1 << LAYER_WALLS;
+        }
     }
     // If the action didn't fail
     if (history->active) {
@@ -31,20 +38,24 @@ void action_history_apply(action_history* history, table_full* table,
     }
 }
 
-void action_history_do(action_history* history, table_full* table,
-                       table_tiles* tiles, size_t tool, size_t x, size_t y,
-                       size_t* invalid_layer) {
+void history_do(history* history, table_full* table, table_tiles* tiles,
+                stage_ball* balls, size_t tool, size_t x, size_t y,
+                size_t* invalid_layer) {
     action_tool* action = history->history + history->index;
     action->x1 = action->x2 = x, action->y1 = action->y2 = y;
     action->tool = tool;
-    action_history_apply(history, table, tiles, invalid_layer);
+    if (IS_TOOL_BALL(action->tool)) {
+        stage_ball* ball = balls + action->tool - TOOL_BALL_0;
+        action->backup[0] = ball->x, action->backup[1] = ball->y;
+    }
+    history_apply(history, table, tiles, balls, invalid_layer);
     // If something changed we need to redraw the hud
     if (history->active)
         *invalid_layer |= 1 << LAYER_HUD;
 }
 
-void action_history_undo(action_history* history, table_full* table,
-                         table_tiles* tiles, size_t* invalid_layer) {
+void history_undo(history* history, table_full* table, table_tiles* tiles,
+                  stage_ball* balls, size_t* invalid_layer) {
     if (history->count == 0)
         return;
     history->count--;
@@ -59,17 +70,21 @@ void action_history_undo(action_history* history, table_full* table,
     } else if (action->tool == TOOL_BACK) {
         table_remove_back(table, tiles);
         *invalid_layer |= 1 << LAYER_BACK;
-    } else if (action->tool <= TOOL_BACK) {
+    } else if (IS_TOOL_LINE(action->tool)) {
         table_remove_line(table, tiles, action->backup);
         *invalid_layer |= 1 << LAYER_WALLS;
+    } else if (IS_TOOL_BALL(action->tool)) {
+        stage_ball* ball = balls + action->tool - TOOL_BALL_0;
+        ball->x = action->backup[0], ball->y = action->backup[1];
+        *invalid_layer |= 1 << LAYER_BALLS;
     }
     // Redraw the hud
     *invalid_layer |= 1 << LAYER_HUD;
 }
 
-void action_history_redo(action_history* history, table_full* table,
-                         table_tiles* tiles, size_t x, size_t y,
-                         size_t* invalid_layer) {
+void history_redo(history* history, table_full* table, table_tiles* tiles,
+                  stage_ball* balls, size_t x, size_t y,
+                  size_t* invalid_layer) {
     if (history->count == 0)
         return;
     size_t index = HISTORY_SIZE - 1;
@@ -77,18 +92,18 @@ void action_history_redo(action_history* history, table_full* table,
         index = history->index - 1;
     action_tool* action = history->history + index;
     if (x != action->x2 || y != action->y2) {
-        action_history_undo(history, table, tiles, invalid_layer);
+        history_undo(history, table, tiles, balls, invalid_layer);
         action->x2 = x, action->y2 = y;
-        action_history_apply(history, table, tiles, invalid_layer);
+        history_apply(history, table, tiles, balls, invalid_layer);
     }
 }
 
-void action_history_clear(action_history* history) {
-    memset(history, 0, sizeof(action_history));
+void history_clear(history* history) {
+    memset(history, 0, sizeof(*history));
 }
 
-action_history* action_history_init() {
-    action_history* history = malloc(sizeof(action_history));
-    memset(history, 0, sizeof(action_history));
+history* history_init() {
+    history* history = malloc(sizeof(*history));
+    memset(history, 0, sizeof(*history));
     return history;
 }

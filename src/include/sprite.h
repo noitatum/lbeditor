@@ -10,6 +10,7 @@
 #define SPRITE_HOLE_COUNT   0x14
 #define SPRITE_ALL_COUNT    0x58
 #define SPRITE_DUST_COUNT   0x04
+#define LETTER(letter) ((letter) - 32)
 
 typedef struct lb_sprites {
     SDL_Texture* balls[SPRITE_BALL_COUNT];
