@@ -1,9 +1,6 @@
 #include <hud.h>
 #include <render.h>
 
-#define TOOLBOX_TABLE 0
-#define TOOLBOX_COUNT 10
-
 static const table_line hud_lines[] = {
     {0x02 | TYPE_HORIZONTAL, 0x01, 0x1D}, {0x02 | TYPE_HORIZONTAL, 0x06, 0x1D},
     {0x01 | TYPE_VERTICAL  , 0x02, 0x05}, {0x0C | TYPE_VERTICAL  , 0x02, 0x05},
@@ -14,16 +11,15 @@ static const table_line hud_lines[] = {
     {0x1E | TYPE_DIAGONAL  , 0x06 | SLOPE_NW, 0x06},
 };
 
-static const SDL_Rect screen =   {0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
-static const SDL_Rect hud_back = {2 * TSIZE, 2 * TSIZE, 28 * TSIZE, 4 * TSIZE};
-static const SDL_Rect toolbox =  {2 * TSIZE, 2 * TSIZE, 10 * TSIZE, 4 * TSIZE};
+const SDL_Rect hud_back = {2 * TSIZE, 2 * TSIZE, 28 * TSIZE, 4 * TSIZE};
+const SDL_Rect toolbox =  {2 * TSIZE, 2 * TSIZE, 10 * TSIZE, 4 * TSIZE};
 
 size_t in_rect(SDL_Rect r, ssize_t x, ssize_t y) {
     return x >= r.x && y >= r.y && x - r.x < r.w && y - r.y < r.h;
 }
 
 SDL_Texture* create_texture_frame(SDL_Renderer* renderer, lb_sprites* sprites) {
-    SDL_Texture* hud = create_texture(renderer, SCREEN_WIDTH, SCREEN_HEIGHT); 
+    SDL_Texture* hud = create_texture(renderer, SCREEN_WIDTH, SCREEN_HEIGHT);
     set_render_color(renderer, get_color(0x00));
     SDL_RenderFillRect(renderer, &hud_back);
     table_tiles tiles;
@@ -55,14 +51,14 @@ void render_texture_tool(SDL_Renderer* renderer, SDL_Texture** corners,
 }
 
 SDL_Texture* create_texture_tools(SDL_Renderer* renderer, lb_sprites* sprites) {
-    SDL_Texture* tools = create_texture(renderer, toolbox.w, toolbox.h);    
+    SDL_Texture* tools = create_texture(renderer, toolbox.w, toolbox.h);
     SDL_Rect target = {0, 0, BSIZE, BSIZE};
     for (size_t i = 0; i < 4; i++) {
         SDL_RenderCopy(renderer, sprites->slopes[16 + i], NULL, &target);
         target.x += TSIZE * 2;
     }
     SDL_RenderCopy(renderer, sprites->blocks[2], NULL, &target);
-    target = (SDL_Rect) {0, BSIZE, BSIZE, BSIZE}; 
+    target = (SDL_Rect) {0, BSIZE, BSIZE, BSIZE};
     render_texture_tool(renderer, sprites->slopes, target.x, target.y);
     target.x += TSIZE * 2;
     render_texture_tool(renderer, sprites->blocks + 0x20, target.x, target.y);
@@ -76,30 +72,14 @@ SDL_Texture* create_texture_tools(SDL_Renderer* renderer, lb_sprites* sprites) {
     return tools;
 }
 
-void render_hud(SDL_Renderer* renderer, lb_hud* hud, 
-                lb_sprites* sprites, lb_stages* stages) {
-    table_full* table = stages->tables + hud->map;
-    SDL_RenderCopy(renderer, hud->frame, NULL, &screen); 
-    if (hud->toolbox == TOOLBOX_TABLE)
-        SDL_RenderCopy(renderer, hud->tools, NULL, &toolbox);
-    else
-        SDL_RenderCopy(renderer, hud->balls, NULL, &toolbox);
-    printf_pos(renderer, sprites, 13, 2,
-    "map %02i byte %i\nstages line %i\n%02i %02i  hole %i\n       back %i\n",
-        hud->map, table->byte_count, table->line_count, table->stage_a + 1,
-        table->stage_b + 1, table->hole_count, table->back_count);
-    SDL_Rect selected = {BSIZE * (hud->tool % 5) + toolbox.x, 
-                         BSIZE * (hud->tool / 5) + toolbox.y, BSIZE, BSIZE};
-    SDL_SetRenderDrawColor(renderer, 0xFF, 0x00, 0x00, 0xFF);
-    SDL_RenderDrawRect(renderer, &selected);
-}
-
-void hud_click(lb_hud* hud, size_t x, size_t y) {
-    if (in_rect(toolbox, x, y))
+void hud_click(lb_hud* hud, size_t x, size_t y, size_t* invalid_layers) {
+    if (in_rect(toolbox, x, y)) {
         hud->tool = (x - toolbox.x) / BSIZE + ((y - toolbox.y) / BSIZE) * 5;
+        *invalid_layers |= 1 << LAYER_HUD;
+    }
 }
 
-void hud_key(lb_hud* hud, SDL_Keycode key) {
+void hud_key(lb_hud* hud, SDL_Keycode key, size_t* invalid_layers) {
     if (key == SDLK_LEFT || key == SDLK_RIGHT) {
         if (key == SDLK_RIGHT) {
             hud->map++;
@@ -110,12 +90,17 @@ void hud_key(lb_hud* hud, SDL_Keycode key) {
                 hud->map = TABLE_COUNT;
             hud->map--;
         }
-    } else if (key == SDLK_UP)
+        *invalid_layers |= LAYER_FLAGS_ALL;
+    } else if (key == SDLK_UP) {
         hud->stage_b = !hud->stage_b;
-      else if (key == SDLK_DOWN)
+        *invalid_layers |= 1 << LAYER_BALLS;
+    } else if (key == SDLK_DOWN) {
         hud->toolbox = !hud->toolbox;
-      else if (key >= SDLK_0 && key <= SDLK_9)
+        *invalid_layers |= 1 << LAYER_HUD;
+    } else if (key >= SDLK_0 && key <= SDLK_9) {
         hud->tool = (key + 1) % TOOLBOX_COUNT;
+        *invalid_layers |= 1 << LAYER_HUD;
+    }
 }
 
 size_t hud_tool(lb_hud* hud) {

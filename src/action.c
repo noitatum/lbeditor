@@ -1,39 +1,51 @@
 #include <string.h>
 #include <action.h>
 #include <hud.h>
+#include <render.h>
 
 void action_history_apply(action_history* history, table_full* table,
-                          table_tiles* tiles) {
+                          table_tiles* tiles, size_t* invalid_layer) {
     action_tool* action = history->history + history->index;
-    if (action->tool == TOOL_HOLE)
-        history->active = !table_add_hole(table, tiles, action->x2, action->y2, 
+    if (action->tool == TOOL_HOLE) {
+        history->active = !table_add_hole(table, tiles, action->x2, action->y2,
                                           action->backup);
-    else if (action->tool == TOOL_BACK)
+        *invalid_layer |= 1 << LAYER_HOLES;
+    } else if (action->tool == TOOL_BACK) {
         history->active = !table_add_back(table, tiles, action->x1, action->y1,
                                          action->x2, action->y2);
-    else if (action->tool <= TOOL_BACK)
+        *invalid_layer |= 1 << LAYER_BACK;
+    } else if (action->tool <= TOOL_BACK) {
         history->active = !table_add_line(table, tiles, action->x1, action->y1,
-                                          action->x2, action->y2, action->tool, 
+                                          action->x2, action->y2, action->tool,
                                           action->backup);
-    if (history->count < HISTORY_SIZE)
-        history->count++;
-    if (history->index < HISTORY_SIZE - 1)
-        history->index++;
-    else
-        history->index = 0;
+        *invalid_layer |= 1 << LAYER_WALLS;
+    }
+    // If the action didn't fail
+    if (history->active) {
+        if (history->count < HISTORY_SIZE)
+            history->count++;
+        if (history->index < HISTORY_SIZE - 1)
+            history->index++;
+        else
+            history->index = 0;
+    }
 }
 
 void action_history_do(action_history* history, table_full* table,
-                       table_tiles* tiles, size_t  tool, size_t x, size_t y) {
+                       table_tiles* tiles, size_t tool, size_t x, size_t y,
+                       size_t* invalid_layer) {
     action_tool* action = history->history + history->index;
     action->x1 = action->x2 = x, action->y1 = action->y2 = y;
     action->tool = tool;
-    action_history_apply(history, table, tiles);
+    action_history_apply(history, table, tiles, invalid_layer);
+    // If something changed we need to redraw the hud
+    if (history->active)
+        *invalid_layer |= 1 << LAYER_HUD;
 }
 
 void action_history_undo(action_history* history, table_full* table,
-                         table_tiles* tiles) {
-    if (history->count == 0) 
+                         table_tiles* tiles, size_t* invalid_layer) {
+    if (history->count == 0)
         return;
     history->count--;
     if (history->index > 0)
@@ -41,16 +53,23 @@ void action_history_undo(action_history* history, table_full* table,
     else
         history->index = HISTORY_SIZE - 1;
     action_tool* action = history->history + history->index;
-    if (action->tool == TOOL_HOLE)
+    if (action->tool == TOOL_HOLE) {
+        *invalid_layer |= 1 << LAYER_HOLES;
         table_remove_hole(table, tiles, action->backup);
-    else if (action->tool == TOOL_BACK)
+    } else if (action->tool == TOOL_BACK) {
         table_remove_back(table, tiles);
-    else if (action->tool <= TOOL_BACK)
-        table_remove_line(table, tiles, action->backup); 
+        *invalid_layer |= 1 << LAYER_BACK;
+    } else if (action->tool <= TOOL_BACK) {
+        table_remove_line(table, tiles, action->backup);
+        *invalid_layer |= 1 << LAYER_WALLS;
+    }
+    // Redraw the hud
+    *invalid_layer |= 1 << LAYER_HUD;
 }
 
 void action_history_redo(action_history* history, table_full* table,
-                         table_tiles* tiles, size_t x, size_t y) {
+                         table_tiles* tiles, size_t x, size_t y,
+                         size_t* invalid_layer) {
     if (history->count == 0)
         return;
     size_t index = HISTORY_SIZE - 1;
@@ -58,9 +77,9 @@ void action_history_redo(action_history* history, table_full* table,
         index = history->index - 1;
     action_tool* action = history->history + index;
     if (x != action->x2 || y != action->y2) {
-        action_history_undo(history, table, tiles);
+        action_history_undo(history, table, tiles, invalid_layer);
         action->x2 = x, action->y2 = y;
-        action_history_apply(history, table, tiles);
+        action_history_apply(history, table, tiles, invalid_layer);
     }
 }
 

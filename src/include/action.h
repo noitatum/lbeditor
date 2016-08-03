@@ -16,9 +16,11 @@ typedef struct action_history {
 
 action_history* action_history_init();
 void action_history_do(action_history* history, table_full* table,
-                       table_tiles* tiles, size_t tool, size_t x, size_t y);
+                       table_tiles* tiles, size_t tool, size_t x, size_t y,
+                       size_t* invalid_layers);
 void action_history_undo(action_history* history, table_full* table,
-                         table_tiles* tiles);
+                         table_tiles* tiles, size_t* invalid_layers);
 void action_history_redo(action_history* history, table_full* table,
-                         table_tiles* tiles, size_t x, size_t y);
+                         table_tiles* tiles, size_t x, size_t y,
+                         size_t* invalid_layers);
 void action_history_clear(action_history* history);

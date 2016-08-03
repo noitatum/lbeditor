@@ -7,12 +7,12 @@
 #include <hud.h>
 #include <action.h>
 
-static const SDL_Rect map_area = {3 * TSIZE, 8 * TSIZE, 26 * TSIZE, 19 * TSIZE};
+const SDL_Rect map_area = {3 * TSIZE, 8 * TSIZE, 26 * TSIZE, 19 * TSIZE};
 
 typedef struct resources {
     FILE* rom;
     SDL_Window* window;
-    SDL_Renderer* renderer;
+    lb_render* render;
     lb_sprites* sprites;
     lb_stages* stages;
     lb_hud* hud;
@@ -38,8 +38,8 @@ void resources_destroy(resources* res) {
         free(res->stages);
     if (res->sprites)
         sprites_destroy(res->sprites);
-    if (res->renderer)
-        SDL_DestroyRenderer(res->renderer);
+    if (res->render)
+        render_destroy(res->render);
     if (res->window)
         SDL_DestroyWindow(res->window);
     fclose(res->rom);
@@ -51,13 +51,13 @@ int resources_init(resources* r, FILE* rom) {
     r->rom = rom;
     if (!(r->window = initialize_sdl()))
         return -1;
-    if (!(r->renderer = initialize_render(r->window)))
+    if (!(r->render = render_init(r->window)))
         return -1;
-    if (!(r->sprites = sprites_init(r->renderer, rom)))
+    if (!(r->sprites = sprites_init(r->render->renderer, rom)))
         return -1;
     if (!(r->stages = stages_init(rom)))
         return -1;
-    if (!(r->hud = hud_init(r->renderer, r->sprites)))
+    if (!(r->hud = hud_init(r->render->renderer, r->sprites)))
         return -1;
     if (!(r->history = action_history_init()))
         return -1;
@@ -72,36 +72,42 @@ void exit_error(resources* res) {
 
 void handle_event(SDL_Event* e, resources* r, table_tiles* tiles) {
     table_full* table = r->stages->tables + r->hud->map;
+    size_t* inv = &r->render->invalid_layers;
     if (e->type == SDL_KEYDOWN) {
         SDL_Keycode key = e->key.keysym.sym;
-        hud_key(r->hud, key);
+        hud_key(r->hud, key, inv);
         if (table != r->stages->tables + r->hud->map) {
+            // Table changed retile
             init_table_tiles(tiles, r->stages->tables + r->hud->map);
             action_history_clear(r->history);
         }
         if (key == SDLK_u) {
-            action_history_undo(r->history, table, tiles);
+            // Undo action
+            action_history_undo(r->history, table, tiles, inv);
             r->history->active = 0;
         } else if (key == SDLK_DELETE) {
+            // Delete table
             table_clear(table, tiles);
             action_history_clear(r->history);
+            *inv |= LAYER_FLAGS_ALL & ~(1 << LAYER_DUST);
         }
     } else if (e->type == SDL_MOUSEBUTTONDOWN) {
         size_t x = e->button.x / TSIZE, y = e->button.y / TSIZE;
         if (e->button.button == SDL_BUTTON_LEFT) {
             if (!in_rect(map_area, e->button.x, e->button.y)) {
-                hud_click(r->hud, e->button.x, e->button.y);
+                hud_click(r->hud, e->button.x, e->button.y, inv);
                 return;
             }
-            action_history_do(r->history, table, tiles, hud_tool(r->hud), x, y);
+            size_t tool = hud_tool(r->hud);
+            action_history_do(r->history, table, tiles, tool, x, y, inv);
         } else if (e->button.button == SDL_BUTTON_RIGHT) {
-            action_history_undo(r->history, table, tiles);
+            action_history_undo(r->history, table, tiles, inv);
             r->history->active = 0;
         }
     } else if (e->type == SDL_MOUSEMOTION) {
         size_t x = e->motion.x / TSIZE, y = e->motion.y / TSIZE;
         if (r->history->active && in_rect(map_area, e->button.x, e->button.y))
-            action_history_redo(r->history, table, tiles, x, y);
+            action_history_redo(r->history, table, tiles, x, y, inv);
     } else if (e->type == SDL_MOUSEBUTTONUP) {
         if (e->button.button == SDL_BUTTON_LEFT)
             r->history->active = 0;
@@ -124,14 +130,11 @@ int main(int argc, char* argv[]) {
     table_tiles tiles;
     SDL_Event e = {0};
     init_table_tiles(&tiles, r.stages->tables);
-    SDL_SetRenderTarget(r.renderer, NULL);
     while (e.type != SDL_QUIT) {
         SDL_WaitEvent(&e);
         handle_event(&e, &r, &tiles);
-        render_all(r.renderer, r.sprites, r.stages, r.hud, &tiles);
-        SDL_SetRenderDrawColor(r.renderer, 0x00, 0xFF, 0x00, 0xFF);
-        SDL_RenderDrawRect(r.renderer, &map_area);
-        SDL_RenderPresent(r.renderer);
+        render_invalid(r.render, r.sprites, r.stages, r.hud, &tiles);
+        render_present(r.render);
     }
     resources_destroy(&r);
     return EXIT_SUCCESS;
