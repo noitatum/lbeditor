@@ -60,9 +60,9 @@ lb_stages* stages_init(FILE* rom) {
     for (size_t i = 0; i < STAGE_COUNT; i++) {
         size_t table = stages->order[i] - 1;
         if (table < TABLE_COUNT)
-            stages->tables[table].stage_a = i;
+            stages->tables[table].stage_a = i + 1;
         else
-            stages->tables[table - TABLE_COUNT].stage_b = i;
+            stages->tables[table - TABLE_COUNT].stage_b = i + 1;
     }
     return stages;
 }

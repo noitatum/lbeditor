@@ -90,7 +90,8 @@ void sprites_tiles_init(SDL_Renderer* renderer, FILE* rom, rgba_palette colors,
 }
 
 lb_sprites* sprites_init(SDL_Renderer* renderer, FILE* rom) {
-    static const ppu_palette TILE_COLORS = {{0x3F, 0x30, 0x00, 0x3F}};
+    static const ppu_palette tile_colors = {{COLOR_NONE, COLOR_WHITE,
+                                             COLOR_GRAY, COLOR_NONE}};
     lb_sprites* spr = (lb_sprites*) malloc(sizeof(lb_sprites));
     ppu_palette colors[ROM_PALETTE_BALL_SIZE];
     rgba_palette pals[ROM_PALETTE_BALL_SIZE];
@@ -102,9 +103,9 @@ lb_sprites* sprites_init(SDL_Renderer* renderer, FILE* rom) {
     for (size_t i = 0; i < SPRITE_BALL_COUNT; i++)
         spr->balls[i] = create_texture_ball(renderer, rom, pals[i >> 1]);
     fseek(rom, ROM_PPU_OFFSET + PPU_LETTERS_OFFSET, SEEK_SET);
-    rgba_palette rgba = ppu_to_rgba(TILE_COLORS);
+    rgba_palette rgba = ppu_to_rgba(tile_colors);
     sprites_tiles_init(renderer, rom, rgba, spr->letters, SPRITE_LETTER_COUNT);
-    rgba.color[0] = get_color(0x1D);
+    rgba.color[0] = get_color(COLOR_BLACK);
     sprites_tiles_init(renderer, rom, rgba, spr->blocks, SPRITE_ALL_COUNT);
     spr->crater = create_texture_crater(renderer, rom, rgba); 
     sprites_tiles_init(renderer, rom, rgba, spr->dusts, SPRITE_DUST_COUNT);

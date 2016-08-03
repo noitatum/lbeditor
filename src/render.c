@@ -1,7 +1,7 @@
 #include <SDL2/SDL.h>
 #include <render.h>
 
-const rgba_color NES_PALETTE[64] = {
+static const rgba_color NES_PALETTE[64] = {
     { 84, 84, 84,255}, {  0, 30,116,255}, {  8, 16,144,255}, { 48,  0,136,255},
     { 68,  0,100,255}, { 92,  0, 48,255}, { 84,  4,  0,255}, { 60, 24,  0,255},
     { 32, 42,  0,255}, {  8, 58,  0,255}, {  0, 64,  0,255}, {  0, 60,  0,255},
@@ -99,11 +99,15 @@ int random_tile(SDL_Rect* rect, size_t big,
     return 0;
 }
 
-void render_dust(SDL_Renderer* renderer, lb_sprites* sprites) {
+void render_dust(SDL_Renderer* renderer, lb_sprites* sprites, size_t stage) {
+    const rgba_color dust_colors[4] = {
+        NES_PALETTE[COLOR_PINK], NES_PALETTE[COLOR_GREEN],
+        NES_PALETTE[COLOR_CYAN], NES_PALETTE[COLOR_PURPLE]};
+    srand(stage);
     size_t size_x = GRID_WIDTH + 2, size_y = GRID_HEIGHT + 2;
     u8 dust[size_y][size_x];
     memset(dust, 0, sizeof(dust));
-    set_render_color(renderer, NES_PALETTE[0x25]);
+    set_render_color(renderer, dust_colors[(stage - 1) % 4]);
     SDL_RenderClear(renderer);
     SDL_Rect dest = (SDL_Rect) {0, 0, TSIZE * 2, TSIZE * 2};
     for (size_t i = 0; i < 10; i++)
@@ -119,7 +123,7 @@ void render_dust(SDL_Renderer* renderer, lb_sprites* sprites) {
 }
 
 void render_back(SDL_Renderer* renderer, table_tiles* tiles) {
-    set_render_color(renderer, NES_PALETTE[0x09]);
+    set_render_color(renderer, NES_PALETTE[COLOR_BACK]);
     for (size_t i = 0; i < tiles->back_count; i++) {
         table_back* b = tiles->backs + i;
         SDL_Rect rect = {b->x1 * TSIZE, b->y1 * TSIZE,
@@ -197,8 +201,8 @@ void render_hud(SDL_Renderer* renderer, lb_hud* hud,
         SDL_RenderCopy(renderer, hud->balls, NULL, &toolbox);
     printf_pos(renderer, sprites, 13, 2,
     "map %02i byte %i\nstages line %i\n%02i %02i  hole %i\n       back %i\n",
-        hud->map, table->byte_count, table->line_count, table->stage_a + 1,
-        table->stage_b + 1, table->hole_count, table->back_count);
+        hud->map, table->byte_count, table->line_count, table->stage_a,
+        table->stage_b, table->hole_count, table->back_count);
     SDL_Rect selected = {BSIZE * (hud->tool % 5) + toolbox.x,
                          BSIZE * (hud->tool / 5) + toolbox.y, BSIZE, BSIZE};
     SDL_SetRenderDrawColor(renderer, 0xFF, 0x00, 0x00, 0xFF);
@@ -209,6 +213,7 @@ void render_invalid(lb_render* render, lb_sprites* sprites, lb_stages* stages,
                     lb_hud* hud, table_tiles* tiles) {
     stage_ball* balls = stages->balls[hud->map + TABLE_COUNT * hud->stage_b];
     table_full* table = stages->tables + hud->map;
+    size_t stage = (hud->stage_b ? table->stage_b : table->stage_a);
     // Clear invalid layers
     for (size_t i = 0; i < LAYER_COUNT; i++) {
         if (render->invalid_layers & (1 << i)) {
@@ -219,9 +224,8 @@ void render_invalid(lb_render* render, lb_sprites* sprites, lb_stages* stages,
     }
     // Render again only the invalid layers
     if (render->invalid_layers & (1 << LAYER_DUST)) {
-        srand(hud->map + 1);
         SDL_SetRenderTarget(render->renderer, render->layers[LAYER_DUST]);
-        render_dust(render->renderer, sprites);
+        render_dust(render->renderer, sprites, stage);
     }
     if (render->invalid_layers & (1 << LAYER_BACK)) {
         SDL_SetRenderTarget(render->renderer, render->layers[LAYER_BACK]);

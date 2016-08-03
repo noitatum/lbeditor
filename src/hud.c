@@ -20,7 +20,7 @@ size_t in_rect(SDL_Rect r, ssize_t x, ssize_t y) {
 
 SDL_Texture* create_texture_frame(SDL_Renderer* renderer, lb_sprites* sprites) {
     SDL_Texture* hud = create_texture(renderer, SCREEN_WIDTH, SCREEN_HEIGHT);
-    set_render_color(renderer, get_color(0x00));
+    set_render_color(renderer, get_color(COLOR_GRAY));
     SDL_RenderFillRect(renderer, &hud_back);
     table_tiles tiles;
     memset(&tiles, 0, sizeof(tiles));
@@ -71,7 +71,7 @@ SDL_Texture* create_texture_tools(SDL_Renderer* renderer, lb_sprites* sprites) {
     target.x += TSIZE * 2;
     render_texture_tool(renderer, sprites->holes, target.x, target.y);
     target.x += TSIZE * 2;
-    set_render_color(renderer, get_color(0x09));
+    set_render_color(renderer, get_color(COLOR_BACK));
     SDL_RenderFillRect(renderer, &target);
     render_texture_next(renderer, sprites);
     return tools;
@@ -100,7 +100,7 @@ void hud_key(lb_hud* hud, SDL_Keycode key, size_t* invalid_layers) {
         *invalid_layers |= LAYER_FLAGS_ALL;
     } else if (key == SDLK_UP) {
         hud->stage_b = !hud->stage_b;
-        *invalid_layers |= 1 << LAYER_BALLS;
+        *invalid_layers |= 1 << LAYER_BALLS | 1 << LAYER_DUST;
     } else if (key == SDLK_DOWN) {
         hud->toolbox = !hud->toolbox;
         *invalid_layers |= 1 << LAYER_HUD;

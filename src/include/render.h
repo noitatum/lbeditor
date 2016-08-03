@@ -18,6 +18,15 @@
 #define LAYER_HUD       5
 #define LAYER_COUNT     6
 #define LAYER_FLAGS_ALL ((1 << LAYER_COUNT) - 1)
+#define COLOR_GRAY      0x00
+#define COLOR_BACK      0x09
+#define COLOR_PURPLE    0x14
+#define COLOR_GREEN     0x1A
+#define COLOR_BLACK     0x1D
+#define COLOR_PINK      0x25
+#define COLOR_WHITE     0x30
+#define COLOR_CYAN      0x3B
+#define COLOR_NONE      0x3F
 
 typedef struct rgba_color {
     u8 r, g, b, a;
