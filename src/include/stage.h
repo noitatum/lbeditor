@@ -32,6 +32,8 @@
 #define FLAG_BODY_SQUARE 0x00
 #define FLAG_LINE_BLOCK  0x20
 
+#define ROM_MAP_DATA_BYTES     0x0AC5
+#define ROM_MAP_DATA_START     0x1566
 #define ROM_STAGE_TABLE_OFFSET 0x1507
 #define ROM_STAGE_ORDER_OFFSET 0x4D47
 #define ROM_RAM_OFFSET         0xBFF0
@@ -75,6 +77,7 @@ typedef struct table_tiles {
 } table_tiles;
 
 lb_stages* stages_init(FILE* rom);
+void stages_write(lb_stages* stages, FILE* rom);
 void tile_table_lines(table_tiles* tiles, const table_line* lines, size_t count);
 void tile_table_line(table_tiles* tiles, const table_line* line, u8* backup,
                      size_t reverse);

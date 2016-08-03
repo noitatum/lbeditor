@@ -255,7 +255,7 @@ void render_present(lb_render* render) {
     SDL_SetRenderTarget(render->renderer, NULL);
     for (size_t i = 0; i < LAYER_COUNT; i++)
         SDL_RenderCopy(render->renderer, render->layers[i], NULL, &screen_area);
-    SDL_SetRenderDrawColor(render->renderer, 0x00, 0xFF, 0x00, 0xFF);
+    SDL_SetRenderDrawColor(render->renderer, 0xFF, 0xFF, 0xFF, 0xFF);
     SDL_RenderDrawRect(render->renderer, &map_area);
     SDL_RenderPresent(render->renderer);
 }

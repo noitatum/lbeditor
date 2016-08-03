@@ -67,6 +67,43 @@ lb_stages* stages_init(FILE* rom) {
     return stages;
 }
 
+void table_write(table_full* table, FILE* rom) {
+    if (table->line_count) {
+        table->lines[table->line_count - 1].x |= TABLE_END_BIT;
+        for (size_t i = 0; i < table->line_count; i++) {
+            table_line* line = table->lines + i;
+            fwrite(line, ((line->x & TYPE_MASK) == TYPE_BODY) ? 2 : 3, 1, rom);
+        }
+        table->lines[table->line_count - 1].x ^= TABLE_END_BIT;
+    }
+    if (table->back_count) {
+        table->backs[table->back_count - 1].x1 |= TABLE_END_BIT;
+        fwrite(table->backs, sizeof(table_back), table->back_count, rom);
+        table->backs[table->back_count - 1].x1 ^= TABLE_END_BIT;
+    }
+    if (table->hole_count) {
+        table->holes[table->hole_count - 1].x |= TABLE_END_BIT;
+        fwrite(table->holes, sizeof(table_hole), table->hole_count, rom);
+        table->holes[table->hole_count - 1].x ^= TABLE_END_BIT;
+    }
+}
+
+void stages_write(lb_stages* stages, FILE* rom) {
+    u16 table[TABLE_COUNT];
+    fseek(rom, ROM_STAGE_ORDER_OFFSET, SEEK_SET);
+    fwrite(stages->order, sizeof(stages->order) + sizeof(stages->balls), 1, rom);
+    fseek(rom, ROM_MAP_DATA_START, SEEK_SET);
+    for (size_t i = 0, bytes = ROM_MAP_DATA_BYTES; i < TABLE_COUNT; i++) {
+        if (stages->tables[i].byte_count > bytes)
+            break;
+        bytes -= stages->tables[i].byte_count;
+        table[i] = ftell(rom) + ROM_RAM_OFFSET;
+        table_write(stages->tables + i, rom);
+    }
+    fseek(rom, ROM_STAGE_TABLE_OFFSET, SEEK_SET);
+    fwrite(table, sizeof(table), 1, rom);
+}
+
 void tile_table_wall(table_tiles* tiles, size_t x, size_t y, u8 wall,
                      u8* backup, size_t n, size_t reverse) {
     u8* tile = tiles->walls[y] + x;
@@ -126,7 +163,7 @@ int table_add_line(table_full* table, table_tiles* tiles, size_t x1, size_t y1,
         return -1;
     size_t bytes = sizeof(table_line);
     ssize_t x = x1, y = y1, end = y2;
-    size_t wall = FLAG_LINE_BLOCK, type = TYPE_DIAGONAL;
+    size_t wall = 0, type = TYPE_DIAGONAL;
     if ((x1 == x2 && y1 == y2 && tool == TOOL_BLOCK) ||
         tool == TOOL_SLANT || tool == TOOL_SQUARE) {
         x = x2, y = y2;
@@ -148,6 +185,7 @@ int table_add_line(table_full* table, table_tiles* tiles, size_t x1, size_t y1,
             y = y2, end = y1;
         type = TYPE_VERTICAL;
     } else {
+        wall = FLAG_LINE_BLOCK;
         if (tool != TOOL_BLOCK)
             wall = tool << 6;
         // Revert line if necessary
