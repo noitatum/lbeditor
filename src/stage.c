@@ -161,29 +161,24 @@ int table_add_line(table_full* table, table_tiles* tiles, size_t x1, size_t y1,
                     size_t x2, size_t y2, size_t tool, u8* backup) {
     if (table->line_count == TABLE_MAX_LINES)
         return -1;
-    size_t bytes = sizeof(table_line);
     ssize_t x = x1, y = y1, end = y2;
-    size_t wall = 0, type = TYPE_DIAGONAL;
+    size_t wall = 0, type = TYPE_DIAGONAL, bytes = sizeof(table_line);
     if ((x1 == x2 && y1 == y2 && tool == TOOL_BLOCK) ||
         tool == TOOL_SLANT || tool == TOOL_SQUARE) {
-        x = x2, y = y2;
-        if (tool == TOOL_BLOCK)
-            wall = FLAG_BODY_BLOCK;
-        else if (tool == TOOL_SLANT)
+        x = x2, y = y2, wall = FLAG_BODY_BLOCK, type = TYPE_BODY;
+        if (tool == TOOL_SLANT)
             wall = FLAG_BODY_SLANT;
-        else
+        else if (tool == TOOL_SQUARE)
             wall = FLAG_BODY_SQUARE;
         bytes--;
-        type = TYPE_BODY;
     } else if (y1 == y2 && tool == TOOL_BLOCK) {
-        end = x2;
+        end = x2, type = TYPE_HORIZONTAL;
         if (x1 > x2)
             x = x2, end = x1;
-        type = TYPE_HORIZONTAL;
     } else if (x1 == x2 && tool == TOOL_BLOCK) {
+        type = TYPE_VERTICAL;
         if (y1 > y2)
             y = y2, end = y1;
-        type = TYPE_VERTICAL;
     } else {
         wall = FLAG_LINE_BLOCK;
         if (tool != TOOL_BLOCK)
