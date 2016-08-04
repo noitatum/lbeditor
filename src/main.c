@@ -118,20 +118,20 @@ void handle_event(SDL_Event* e, resources* r, table_tiles* tiles) {
     }
 }
 
-FILE* copy_file(FILE* src) {
-    FILE* dst = fopen("output.nes", "wb");
-    u8 buffer[1024];
-    size_t read;
-    fseek(src, 0, SEEK_SET);
-    while ((read = fread(buffer, 1, 1024, src)))
-        fwrite(buffer, 1, read, dst);
-    fseek(dst, 0, SEEK_SET);
+FILE* create_output_file(FILE* src) {
+    FILE* dst = fopen("output.nes", "rb+");
+    // Make a copy only if the file doesn't exist
+    // This also fixes the case where src is output.nes
+    if (!dst) {
+        dst = fopen("output.nes", "wb");
+        u8 buffer[1024];
+        size_t read;
+        fseek(src, 0, SEEK_SET);
+        while ((read = fread(buffer, 1, 1024, src)))
+            fwrite(buffer, 1, read, dst);
+        fseek(dst, 0, SEEK_SET);
+    }
     return dst;
-}
-
-void write_rom(resources* r) {
-    FILE* output = copy_file(r->rom);
-    stages_write(r->stages, output);
 }
 
 int main(int argc, char* argv[]) {
@@ -156,7 +156,7 @@ int main(int argc, char* argv[]) {
         render_invalid(r.render, r.sprites, r.stages, r.hud, &tiles);
         render_present(r.render);
     }
-    write_rom(&r);
+    stages_write(r.stages, create_output_file(r.rom));
     resources_destroy(&r);
     return EXIT_SUCCESS;
 }
