@@ -119,7 +119,7 @@ void handle_event(SDL_Event* e, resources* r, table_tiles* tiles) {
 }
 
 FILE* copy_file(FILE* src) {
-    FILE* dst = fopen("output.nes", "w");
+    FILE* dst = fopen("output.nes", "wb");
     u8 buffer[1024];
     size_t read;
     fseek(src, 0, SEEK_SET);
