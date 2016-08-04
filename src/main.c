@@ -141,7 +141,7 @@ int main(int argc, char* argv[]) {
     }
     FILE* rom;
     resources r;
-    if (!(rom = fopen(argv[1], "r"))) {
+    if (!(rom = fopen(argv[1], "rb"))) {
         fprintf(stderr, "Couldn't open file %s\n", argv[1]);
         return EXIT_FAILURE;
     }
