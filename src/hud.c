@@ -13,9 +13,10 @@ static const table_line hud_lines[] = {
 
 const SDL_Rect hud_back = {2 * TSIZE, 2 * TSIZE, 28 * TSIZE, 4 * TSIZE};
 const SDL_Rect toolbox =  {2 * TSIZE, 2 * TSIZE, 10 * TSIZE, 4 * TSIZE};
+const SDL_Rect stages_area = {13 * TSIZE, 4 * TSIZE, 6 * TSIZE, TSIZE};
 
-size_t in_rect(SDL_Rect r, ssize_t x, ssize_t y) {
-    return x >= r.x && y >= r.y && x - r.x < r.w && y - r.y < r.h;
+size_t in_rect(const SDL_Rect* r, ssize_t x, ssize_t y) {
+    return x >= r->x && y >= r->y && x - r->x < r->w && y - r->y < r->h;
 }
 
 SDL_Texture* create_texture_frame(SDL_Renderer* renderer, lb_sprites* sprites) {
@@ -78,11 +79,14 @@ SDL_Texture* create_texture_tools(SDL_Renderer* renderer, lb_sprites* sprites) {
 }
 
 void hud_click(lb_hud* hud, size_t x, size_t y, size_t* invalid_layers) {
-    if (in_rect(toolbox, x, y)) {
+    if (in_rect(&toolbox, x, y)) {
         hud->tool = (x - toolbox.x) / BSIZE + ((y - toolbox.y) / BSIZE) * 5;
         if (hud->tool == TOOL_NEXT)
             hud->toolbox = !hud->toolbox;
         *invalid_layers |= 1 << LAYER_HUD;
+    } else if (in_rect(&stages_area, x, y)) {
+        hud->stage_b = !hud->stage_b;
+        *invalid_layers |= 1 << LAYER_HUD | 1 << LAYER_BALLS | 1 << LAYER_DUST;
     }
 }
 
@@ -100,7 +104,7 @@ void hud_key(lb_hud* hud, SDL_Keycode key, size_t* invalid_layers) {
         *invalid_layers |= LAYER_FLAGS_ALL;
     } else if (key == SDLK_UP) {
         hud->stage_b = !hud->stage_b;
-        *invalid_layers |= 1 << LAYER_BALLS | 1 << LAYER_DUST;
+        *invalid_layers |= 1 << LAYER_HUD | 1 << LAYER_BALLS | 1 << LAYER_DUST;
     } else if (key == SDLK_DOWN) {
         hud->toolbox = !hud->toolbox;
         *invalid_layers |= 1 << LAYER_HUD;

@@ -95,18 +95,27 @@ lb_sprites* sprites_init(SDL_Renderer* renderer, FILE* rom) {
     lb_sprites* spr = (lb_sprites*) malloc(sizeof(lb_sprites));
     ppu_palette colors[ROM_PALETTE_BALL_SIZE];
     rgba_palette pals[ROM_PALETTE_BALL_SIZE];
+    // Initialize ball palette from rom file
     fseek(rom, ROM_PALETTE_BALL_OFFSET, SEEK_SET);
     fread(colors, sizeof(colors), 1, rom);
     for (size_t i = 0; i < 4; i++)
-        pals[i] = ppu_to_rgba(colors[i]); 
+        pals[i] = ppu_to_rgba(colors[i]);
+    // Initialize ball textures from rom file
     fseek(rom, ROM_PPU_OFFSET, SEEK_SET);
     for (size_t i = 0; i < SPRITE_BALL_COUNT; i++)
         spr->balls[i] = create_texture_ball(renderer, rom, pals[i >> 1]);
-    fseek(rom, ROM_PPU_OFFSET + PPU_LETTERS_OFFSET, SEEK_SET);
+    // Initialize right side sprites from rom file using transparent tile colors
     rgba_palette rgba = ppu_to_rgba(tile_colors);
+    fseek(rom, ROM_PPU_OFFSET + PPU_LETTERS_OFFSET, SEEK_SET);
     sprites_tiles_init(renderer, rom, rgba, spr->letters, SPRITE_LETTER_COUNT);
+    // Initialize lights using light green color and change transparent to black
     rgba.color[0] = get_color(COLOR_BLACK);
-    sprites_tiles_init(renderer, rom, rgba, spr->blocks, SPRITE_ALL_COUNT);
+    rgba.color[3] = get_color(COLOR_LGREEN);
+    sprites_tiles_init(renderer, rom, rgba, spr->lights, SPRITE_LIGHT_COUNT);
+    rgba.color[3] = get_color(COLOR_NONE);
+    // Initialize map sprites: holes and walls
+    sprites_tiles_init(renderer, rom, rgba, spr->blocks, SPRITE_MAP_SUM_COUNT);
+    // Initialize background dust sprites
     spr->crater = create_texture_crater(renderer, rom, rgba); 
     sprites_tiles_init(renderer, rom, rgba, spr->dusts, SPRITE_DUST_COUNT);
     return spr;

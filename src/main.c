@@ -98,7 +98,7 @@ void handle_event(SDL_Event* e, resources* r, table_tiles* tiles) {
     } else if (e->type == SDL_MOUSEBUTTONDOWN) {
         size_t x = e->button.x, y = e->button.y;
         if (e->button.button == SDL_BUTTON_LEFT) {
-            if (in_rect(map_area, x, y)) {
+            if (in_rect(&map_area, x, y)) {
                 size_t tool = hud_tool(r->hud);
                 history_do(r->history, table, tiles, balls, tool, x, y, inv);
             } else {
@@ -110,7 +110,7 @@ void handle_event(SDL_Event* e, resources* r, table_tiles* tiles) {
         }
     } else if (e->type == SDL_MOUSEMOTION) {
         size_t x = e->motion.x, y = e->motion.y;
-        if (r->history->active && in_rect(map_area, x, y))
+        if (r->history->active && in_rect(&map_area, x, y))
             history_redo(r->history, table, tiles, balls, x, y, inv);
     } else if (e->type == SDL_MOUSEBUTTONUP) {
         if (e->button.button == SDL_BUTTON_LEFT)
@@ -123,9 +123,9 @@ FILE* create_output_file(FILE* src) {
     // Make a copy only if the file doesn't exist
     // This also fixes the case where src is output.nes
     if (!dst) {
-        dst = fopen("output.nes", "wb");
         u8 buffer[1024];
         size_t read;
+        dst = fopen("output.nes", "wb");
         fseek(src, 0, SEEK_SET);
         while ((read = fread(buffer, 1, 1024, src)))
             fwrite(buffer, 1, read, dst);

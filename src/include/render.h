@@ -24,6 +24,7 @@
 #define COLOR_GREEN     0x1A
 #define COLOR_BLACK     0x1D
 #define COLOR_PINK      0x25
+#define COLOR_LGREEN    0x2B
 #define COLOR_WHITE     0x30
 #define COLOR_CYAN      0x3B
 #define COLOR_NONE      0x3F

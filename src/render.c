@@ -194,15 +194,23 @@ void render_balls(SDL_Renderer* renderer, stage_ball* balls,
 void render_hud(SDL_Renderer* renderer, lb_hud* hud,
                 lb_sprites* sprites, table_full* table) {
     extern const SDL_Rect toolbox;
+    // Render toolbox
     SDL_RenderCopy(renderer, hud->frame, NULL, &screen_area);
     if (hud->toolbox == TOOLBOX_TABLE)
         SDL_RenderCopy(renderer, hud->tools, NULL, &toolbox);
     else
         SDL_RenderCopy(renderer, hud->balls, NULL, &toolbox);
-    printf_pos(renderer, sprites, 13, 2,
-    "map %02i byte %i\nstages line %i\n%02i %02i  hole %i\n       back %i\n",
-        hud->map, table->byte_count, table->line_count, table->stage_a,
-        table->stage_b, table->hole_count, table->back_count);
+    // Render stage lights
+    SDL_Rect light_box = {TSIZE * 15, TSIZE * 4, TSIZE, TSIZE};
+    SDL_RenderCopy(renderer, sprites->lights[hud->stage_b], NULL, &light_box);
+    light_box.x += TSIZE * 3;
+    SDL_RenderCopy(renderer, sprites->lights[!hud->stage_b], NULL, &light_box);
+    // Render hud information
+    printf_pos(renderer, sprites, 13, 2, "map %02i byte %i\nstages line %i\n"
+        "%02i %02i  hole %i\n       back %i\n", hud->map, table->byte_count,
+        table->line_count, table->stage_a, table->stage_b, table->hole_count,
+        table->back_count);
+    // Render selected tool outline
     SDL_Rect selected = {BSIZE * (hud->tool % 5) + toolbox.x,
                          BSIZE * (hud->tool / 5) + toolbox.y, BSIZE, BSIZE};
     SDL_SetRenderDrawColor(renderer, 0xFF, 0x00, 0x00, 0xFF);

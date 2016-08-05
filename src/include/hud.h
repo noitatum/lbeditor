@@ -23,7 +23,7 @@ typedef struct lb_hud {
     SDL_Texture* balls;
 } lb_hud;
 
-size_t in_rect(SDL_Rect r, ssize_t x, ssize_t y);
+size_t in_rect(const SDL_Rect* r, ssize_t x, ssize_t y);
 lb_hud* hud_init(SDL_Renderer* renderer, lb_sprites* sprites);
 void hud_destroy(lb_hud* hud);
 void hud_click(lb_hud* hud, size_t x, size_t y, size_t* invalid_layers);
