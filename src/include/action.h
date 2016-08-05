@@ -16,11 +16,11 @@ typedef struct history {
 } history;
 
 history* history_init();
-void history_do(history* history, table_full* table, table_tiles* tiles,
+void history_do(history* history, map_full* map, map_tiles* tiles,
                 size_t stage_b, size_t tool, size_t x, size_t y,
                 size_t* invalid_layers);
-void history_undo(history* history, table_full* table, table_tiles* tiles,
+void history_undo(history* history, map_full* map, map_tiles* tiles,
                   size_t* invalid_layers);
-void history_redo(history* history, table_full* table, table_tiles* tiles,
+void history_redo(history* history, map_full* map, map_tiles* tiles,
                   size_t x, size_t y, size_t* invalid_layers);
 void history_clear(history* history);

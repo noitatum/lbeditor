@@ -122,10 +122,10 @@ void render_dust(SDL_Renderer* renderer, lb_sprites* sprites, size_t stage) {
             SDL_RenderCopy(renderer, sprites->dusts[3], NULL, &dest);
 }
 
-void render_back(SDL_Renderer* renderer, table_tiles* tiles) {
+void render_back(SDL_Renderer* renderer, map_tiles* tiles) {
     set_render_color(renderer, NES_PALETTE[COLOR_BACK]);
     for (size_t i = 0; i < tiles->back_count; i++) {
-        table_back* b = tiles->backs + i;
+        map_back* b = tiles->backs + i;
         SDL_Rect rect = {b->x1 * TSIZE, b->y1 * TSIZE,
                          (b->x2 - b->x1 + 1) * TSIZE,
                          (b->y2 - b->y1 + 1) * TSIZE};
@@ -133,7 +133,7 @@ void render_back(SDL_Renderer* renderer, table_tiles* tiles) {
     }
 }
 
-void render_holes(SDL_Renderer* renderer, table_tiles* tiles,
+void render_holes(SDL_Renderer* renderer, map_tiles* tiles,
                   lb_sprites* sprites) {
     for (size_t j = 1; j < GRID_HEIGHT - 1; j++) {
         for (size_t i = 1; i < GRID_WIDTH - 1; i++) {
@@ -145,7 +145,7 @@ void render_holes(SDL_Renderer* renderer, table_tiles* tiles,
     }
 }
 
-u16 get_surroundings(table_tiles* tiles, size_t y, size_t x) {
+u16 get_surroundings(map_tiles* tiles, size_t y, size_t x) {
     static const int offset_x[9] = {-1, -1, 0, 1, 1,  1,  0, -1, -1};
     static const int offset_y[9] = { 0,  1, 1, 1, 0, -1, -1, -1,  0};
     static const u8 flags[9] = {0x4, 0x6, 0x2, 0x3, 0x1, 0x9, 0x8, 0xC, 0x4};
@@ -157,7 +157,7 @@ u16 get_surroundings(table_tiles* tiles, size_t y, size_t x) {
     return sur;
 }
 
-void render_walls(SDL_Renderer* renderer, table_tiles* tiles,
+void render_walls(SDL_Renderer* renderer, map_tiles* tiles,
                   lb_sprites* sprites) {
     for (size_t j = 1; j < GRID_HEIGHT - 1; j++) {
         for (size_t i = 1; i < GRID_WIDTH - 1; i++) {
@@ -192,11 +192,11 @@ void render_balls(SDL_Renderer* renderer, stage_ball* balls,
 }
 
 void render_hud(SDL_Renderer* renderer, lb_hud* hud,
-                lb_sprites* sprites, table_full* table) {
+                lb_sprites* sprites, map_full* map) {
     extern const SDL_Rect toolbox;
     // Render toolbox
     SDL_RenderCopy(renderer, hud->frame, NULL, &screen_area);
-    if (hud->toolbox == TOOLBOX_TABLE)
+    if (hud->toolbox == TOOLBOX_MAP)
         SDL_RenderCopy(renderer, hud->tools, NULL, &toolbox);
     else
         SDL_RenderCopy(renderer, hud->balls, NULL, &toolbox);
@@ -207,9 +207,9 @@ void render_hud(SDL_Renderer* renderer, lb_hud* hud,
     SDL_RenderCopy(renderer, sprites->lights[!hud->stage_b], NULL, &light_box);
     // Render hud information
     printf_pos(renderer, sprites, 13, 2, "map %02i byte %i\nstages line %i\n"
-        "%02i %02i  hole %i\n       back %i\n", hud->map, table->byte_count,
-        table->line_count, table->stages[0], table->stages[1],
-        table->hole_count, table->back_count);
+        "%02i %02i  hole %i\n       back %i\n", hud->map, map->byte_count,
+        map->line_count, map->stages[0], map->stages[1],
+        map->hole_count, map->back_count);
     // Render selected tool outline
     SDL_Rect selected = {BSIZE * (hud->tool % 5) + toolbox.x,
                          BSIZE * (hud->tool / 5) + toolbox.y, BSIZE, BSIZE};
@@ -217,8 +217,8 @@ void render_hud(SDL_Renderer* renderer, lb_hud* hud,
     SDL_RenderDrawRect(renderer, &selected);
 }
 
-void render_invalid(lb_render* render, lb_sprites* sprites, table_full* table,
-                    lb_hud* hud, table_tiles* tiles) {
+void render_invalid(lb_render* render, lb_sprites* sprites, map_full* map,
+                    lb_hud* hud, map_tiles* tiles) {
     // Clear invalid layers
     for (size_t i = 0; i < LAYER_COUNT; i++) {
         if (render->invalid_layers & (1 << i)) {
@@ -230,7 +230,7 @@ void render_invalid(lb_render* render, lb_sprites* sprites, table_full* table,
     // Render again only the invalid layers
     if (render->invalid_layers & (1 << LAYER_DUST)) {
         SDL_SetRenderTarget(render->renderer, render->layers[LAYER_DUST]);
-        render_dust(render->renderer, sprites, table->stages[hud->stage_b]);
+        render_dust(render->renderer, sprites, map->stages[hud->stage_b]);
     }
     if (render->invalid_layers & (1 << LAYER_BACK)) {
         SDL_SetRenderTarget(render->renderer, render->layers[LAYER_BACK]);
@@ -246,11 +246,11 @@ void render_invalid(lb_render* render, lb_sprites* sprites, table_full* table,
     }
     if (render->invalid_layers & (1 << LAYER_BALLS)) {
         SDL_SetRenderTarget(render->renderer, render->layers[LAYER_BALLS]);
-        render_balls(render->renderer, table->balls[hud->stage_b], sprites);
+        render_balls(render->renderer, map->balls[hud->stage_b], sprites);
     }
     if (render->invalid_layers & (1 << LAYER_HUD)) {
         SDL_SetRenderTarget(render->renderer, render->layers[LAYER_HUD]);
-        render_hud(render->renderer, hud, sprites, table);
+        render_hud(render->renderer, hud, sprites, map);
     }
     render->invalid_layers = 0;
 }

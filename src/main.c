@@ -72,24 +72,24 @@ void exit_error(resources* res) {
     exit(EXIT_FAILURE);
 }
 
-void handle_event(SDL_Event* e, resources* r, table_tiles* tiles) {
-    table_full* table = r->stages->tables + r->hud->map;
+void handle_event(SDL_Event* e, resources* r, map_tiles* tiles) {
+    map_full* map = r->stages->maps + r->hud->map;
     size_t* inv = &r->render->invalid_layers;
     if (e->type == SDL_KEYDOWN) {
         SDL_Keycode key = e->key.keysym.sym;
         hud_key(r->hud, key, inv);
-        if (table != r->stages->tables + r->hud->map) {
+        if (map != r->stages->maps + r->hud->map) {
             // Table changed retile
-            init_table_tiles(tiles, r->stages->tables + r->hud->map);
+            init_map_tiles(tiles, r->stages->maps + r->hud->map);
             history_clear(r->history);
         }
         if (key == SDLK_u) {
             // Undo action
-            history_undo(r->history, table, tiles, inv);
+            history_undo(r->history, map, tiles, inv);
             r->history->active = 0;
         } else if (key == SDLK_DELETE) {
-            // Delete table
-            table_clear(table, tiles);
+            // Delete map
+            map_clear(map, tiles);
             history_clear(r->history);
             *inv |= LAYER_FLAGS_ALL & ~(1 << LAYER_DUST);
         }
@@ -98,18 +98,18 @@ void handle_event(SDL_Event* e, resources* r, table_tiles* tiles) {
         if (e->button.button == SDL_BUTTON_LEFT) {
             if (in_rect(&map_area, x, y)) {
                 size_t stage_b = r->hud->stage_b, tool = hud_tool(r->hud);
-                history_do(r->history, table, tiles, stage_b, tool, x, y, inv);
+                history_do(r->history, map, tiles, stage_b, tool, x, y, inv);
             } else {
                 hud_click(r->hud, x, y, inv);
             }
         } else if (e->button.button == SDL_BUTTON_RIGHT) {
-            history_undo(r->history, table, tiles, inv);
+            history_undo(r->history, map, tiles, inv);
             r->history->active = 0;
         }
     } else if (e->type == SDL_MOUSEMOTION) {
         size_t x = e->motion.x, y = e->motion.y;
         if (r->history->active && in_rect(&map_area, x, y))
-            history_redo(r->history, table, tiles, x, y, inv);
+            history_redo(r->history, map, tiles, x, y, inv);
     } else if (e->type == SDL_MOUSEBUTTONUP) {
         if (e->button.button == SDL_BUTTON_LEFT)
             r->history->active = 0;
@@ -145,14 +145,14 @@ int main(int argc, char* argv[]) {
     }
     if (resources_init(&r, rom))
         exit_error(&r);
-    table_tiles tiles;
+    map_tiles tiles;
     SDL_Event e = {0};
-    init_table_tiles(&tiles, r.stages->tables);
+    init_map_tiles(&tiles, r.stages->maps);
     while (e.type != SDL_QUIT) {
         SDL_WaitEvent(&e);
         handle_event(&e, &r, &tiles);
-        table_full* table = r.stages->tables + r.hud->map;
-        render_invalid(r.render, r.sprites, table, r.hud, &tiles);
+        map_full* map = r.stages->maps + r.hud->map;
+        render_invalid(r.render, r.sprites, map, r.hud, &tiles);
         render_present(r.render);
     }
     stages_write(r.stages, create_output_file(r.rom));

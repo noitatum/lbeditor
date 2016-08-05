@@ -39,10 +39,10 @@ typedef struct lb_render {
     SDL_Texture* layers[LAYER_COUNT];
 } lb_render;
 
-void render_walls(SDL_Renderer* renderer, table_tiles* tiles,
+void render_walls(SDL_Renderer* renderer, map_tiles* tiles,
                   lb_sprites* sprites);
-void render_invalid(lb_render* render, lb_sprites* sprites, table_full* table,
-                    lb_hud* hud, table_tiles* tiles);
+void render_invalid(lb_render* render, lb_sprites* sprites, map_full* map,
+                    lb_hud* hud, map_tiles* tiles);
 void render_present(lb_render* render);
 void set_render_color(SDL_Renderer* renderer, rgba_color color);
 rgba_color get_color(u8 color);

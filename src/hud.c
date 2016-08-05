@@ -1,7 +1,7 @@
 #include <hud.h>
 #include <render.h>
 
-static const table_line hud_lines[] = {
+static const map_line hud_lines[] = {
     {0x02 | TYPE_HORIZONTAL, 0x01, 0x1D}, {0x02 | TYPE_HORIZONTAL, 0x06, 0x1D},
     {0x01 | TYPE_VERTICAL  , 0x02, 0x05}, {0x0C | TYPE_VERTICAL  , 0x02, 0x05},
     {0x13 | TYPE_VERTICAL  , 0x02, 0x05}, {0x1E | TYPE_VERTICAL  , 0x02, 0x05},
@@ -23,9 +23,9 @@ SDL_Texture* create_texture_frame(SDL_Renderer* renderer, lb_sprites* sprites) {
     SDL_Texture* hud = create_texture(renderer, SCREEN_WIDTH, SCREEN_HEIGHT);
     set_render_color(renderer, get_color(COLOR_GRAY));
     SDL_RenderFillRect(renderer, &hud_back);
-    table_tiles tiles;
+    map_tiles tiles;
     memset(&tiles, 0, sizeof(tiles));
-    tile_table_lines(&tiles, hud_lines, sizeof(hud_lines) / sizeof(table_line));
+    tile_map_lines(&tiles, hud_lines, sizeof(hud_lines) / sizeof(map_line));
     render_walls(renderer, &tiles, sprites);
     return hud;
 }
@@ -94,11 +94,11 @@ void hud_key(lb_hud* hud, SDL_Keycode key, size_t* invalid_layers) {
     if (key == SDLK_LEFT || key == SDLK_RIGHT) {
         if (key == SDLK_RIGHT) {
             hud->map++;
-            if (hud->map == TABLE_COUNT)
+            if (hud->map == MAP_COUNT)
                 hud->map = 0;
         } else {
             if (hud->map == 0)
-                hud->map = TABLE_COUNT;
+                hud->map = MAP_COUNT;
             hud->map--;
         }
         *invalid_layers |= LAYER_FLAGS_ALL;

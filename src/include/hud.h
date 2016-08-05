@@ -4,15 +4,15 @@
 #include <sprite.h>
 #include <stage.h>
 
-#define TOOLBOX_TABLE 0
-#define TOOLBOX_COUNT 10
-#define TOOL_BLOCK  4
-#define TOOL_SLANT  5
-#define TOOL_SQUARE 6
-#define TOOL_HOLE   7
-#define TOOL_BACK   8
-#define TOOL_NEXT   9
-#define TOOL_BALL_0 10
+#define TOOLBOX_MAP     0
+#define TOOLBOX_COUNT   10
+#define TOOL_BLOCK      4
+#define TOOL_SLANT      5
+#define TOOL_SQUARE     6
+#define TOOL_HOLE       7
+#define TOOL_BACK       8
+#define TOOL_NEXT       9
+#define TOOL_BALL_0     10
 #define IS_TOOL_LINE(tool) ((tool) < TOOL_BACK)
 #define IS_TOOL_BALL(tool) ((tool) >= TOOL_BALL_0 && (tool) < TOOL_BALL_0 + 8)
 
