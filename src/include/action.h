@@ -6,6 +6,7 @@
 
 typedef struct action_tool {
     size_t tool, x1, y1, x2, y2;
+    stage_ball* ball;
     u8 backup[GRID_WIDTH];
 } action_tool;
 
@@ -16,11 +17,10 @@ typedef struct history {
 
 history* history_init();
 void history_do(history* history, table_full* table, table_tiles* tiles,
-                stage_ball* balls, size_t tool, size_t x, size_t y,
+                size_t stage_b, size_t tool, size_t x, size_t y,
                 size_t* invalid_layers);
 void history_undo(history* history, table_full* table, table_tiles* tiles,
-                  stage_ball* balls, size_t* invalid_layers);
-void history_redo(history* history, table_full* table, table_tiles* tiles,
-                  stage_ball* balls, size_t x, size_t y,
                   size_t* invalid_layers);
+void history_redo(history* history, table_full* table, table_tiles* tiles,
+                  size_t x, size_t y, size_t* invalid_layers);
 void history_clear(history* history);

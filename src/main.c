@@ -74,8 +74,6 @@ void exit_error(resources* res) {
 
 void handle_event(SDL_Event* e, resources* r, table_tiles* tiles) {
     table_full* table = r->stages->tables + r->hud->map;
-    stage_ball* balls =
-        r->stages->balls[r->hud->map + TABLE_COUNT * r->hud->stage_b];
     size_t* inv = &r->render->invalid_layers;
     if (e->type == SDL_KEYDOWN) {
         SDL_Keycode key = e->key.keysym.sym;
@@ -87,7 +85,7 @@ void handle_event(SDL_Event* e, resources* r, table_tiles* tiles) {
         }
         if (key == SDLK_u) {
             // Undo action
-            history_undo(r->history, table, tiles, balls, inv);
+            history_undo(r->history, table, tiles, inv);
             r->history->active = 0;
         } else if (key == SDLK_DELETE) {
             // Delete table
@@ -99,19 +97,19 @@ void handle_event(SDL_Event* e, resources* r, table_tiles* tiles) {
         size_t x = e->button.x, y = e->button.y;
         if (e->button.button == SDL_BUTTON_LEFT) {
             if (in_rect(&map_area, x, y)) {
-                size_t tool = hud_tool(r->hud);
-                history_do(r->history, table, tiles, balls, tool, x, y, inv);
+                size_t stage_b = r->hud->stage_b, tool = hud_tool(r->hud);
+                history_do(r->history, table, tiles, stage_b, tool, x, y, inv);
             } else {
                 hud_click(r->hud, x, y, inv);
             }
         } else if (e->button.button == SDL_BUTTON_RIGHT) {
-            history_undo(r->history, table, tiles, balls, inv);
+            history_undo(r->history, table, tiles, inv);
             r->history->active = 0;
         }
     } else if (e->type == SDL_MOUSEMOTION) {
         size_t x = e->motion.x, y = e->motion.y;
         if (r->history->active && in_rect(&map_area, x, y))
-            history_redo(r->history, table, tiles, balls, x, y, inv);
+            history_redo(r->history, table, tiles, x, y, inv);
     } else if (e->type == SDL_MOUSEBUTTONUP) {
         if (e->button.button == SDL_BUTTON_LEFT)
             r->history->active = 0;
@@ -153,7 +151,8 @@ int main(int argc, char* argv[]) {
     while (e.type != SDL_QUIT) {
         SDL_WaitEvent(&e);
         handle_event(&e, &r, &tiles);
-        render_invalid(r.render, r.sprites, r.stages, r.hud, &tiles);
+        table_full* table = r.stages->tables + r.hud->map;
+        render_invalid(r.render, r.sprites, table, r.hud, &tiles);
         render_present(r.render);
     }
     stages_write(r.stages, create_output_file(r.rom));

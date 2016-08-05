@@ -208,8 +208,8 @@ void render_hud(SDL_Renderer* renderer, lb_hud* hud,
     // Render hud information
     printf_pos(renderer, sprites, 13, 2, "map %02i byte %i\nstages line %i\n"
         "%02i %02i  hole %i\n       back %i\n", hud->map, table->byte_count,
-        table->line_count, table->stage_a, table->stage_b, table->hole_count,
-        table->back_count);
+        table->line_count, table->stages[0], table->stages[1],
+        table->hole_count, table->back_count);
     // Render selected tool outline
     SDL_Rect selected = {BSIZE * (hud->tool % 5) + toolbox.x,
                          BSIZE * (hud->tool / 5) + toolbox.y, BSIZE, BSIZE};
@@ -217,11 +217,8 @@ void render_hud(SDL_Renderer* renderer, lb_hud* hud,
     SDL_RenderDrawRect(renderer, &selected);
 }
 
-void render_invalid(lb_render* render, lb_sprites* sprites, lb_stages* stages,
+void render_invalid(lb_render* render, lb_sprites* sprites, table_full* table,
                     lb_hud* hud, table_tiles* tiles) {
-    stage_ball* balls = stages->balls[hud->map + TABLE_COUNT * hud->stage_b];
-    table_full* table = stages->tables + hud->map;
-    size_t stage = (hud->stage_b ? table->stage_b : table->stage_a);
     // Clear invalid layers
     for (size_t i = 0; i < LAYER_COUNT; i++) {
         if (render->invalid_layers & (1 << i)) {
@@ -233,7 +230,7 @@ void render_invalid(lb_render* render, lb_sprites* sprites, lb_stages* stages,
     // Render again only the invalid layers
     if (render->invalid_layers & (1 << LAYER_DUST)) {
         SDL_SetRenderTarget(render->renderer, render->layers[LAYER_DUST]);
-        render_dust(render->renderer, sprites, stage);
+        render_dust(render->renderer, sprites, table->stages[hud->stage_b]);
     }
     if (render->invalid_layers & (1 << LAYER_BACK)) {
         SDL_SetRenderTarget(render->renderer, render->layers[LAYER_BACK]);
@@ -249,7 +246,7 @@ void render_invalid(lb_render* render, lb_sprites* sprites, lb_stages* stages,
     }
     if (render->invalid_layers & (1 << LAYER_BALLS)) {
         SDL_SetRenderTarget(render->renderer, render->layers[LAYER_BALLS]);
-        render_balls(render->renderer, balls, sprites);
+        render_balls(render->renderer, table->balls[hud->stage_b], sprites);
     }
     if (render->invalid_layers & (1 << LAYER_HUD)) {
         SDL_SetRenderTarget(render->renderer, render->layers[LAYER_HUD]);

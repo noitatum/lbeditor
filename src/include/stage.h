@@ -55,7 +55,8 @@ typedef struct table_hole {
 } table_hole;
 
 typedef struct table_full {
-    size_t stage_a, stage_b;
+    size_t stages[2];
+    stage_ball* balls[2];
     size_t byte_count, line_count, back_count, hole_count;
     table_line lines[TABLE_MAX_LINES];
     table_back backs[TABLE_MAX_BACKS];

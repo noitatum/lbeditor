@@ -41,7 +41,7 @@ typedef struct lb_render {
 
 void render_walls(SDL_Renderer* renderer, table_tiles* tiles,
                   lb_sprites* sprites);
-void render_invalid(lb_render* render, lb_sprites* sprites, lb_stages* stages,
+void render_invalid(lb_render* render, lb_sprites* sprites, table_full* table,
                     lb_hud* hud, table_tiles* tiles);
 void render_present(lb_render* render);
 void set_render_color(SDL_Renderer* renderer, rgba_color color);

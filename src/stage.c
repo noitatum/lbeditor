@@ -58,11 +58,11 @@ lb_stages* stages_init(FILE* rom) {
         stages->byte_count += stages->tables[i].byte_count;
     }
     for (size_t i = 0; i < STAGE_COUNT; i++) {
-        size_t table = stages->order[i] - 1;
-        if (table < TABLE_COUNT)
-            stages->tables[table].stage_a = i + 1;
-        else
-            stages->tables[table - TABLE_COUNT].stage_b = i + 1;
+        size_t order = stages->order[i] - 1;
+        size_t table = order % TABLE_COUNT;
+        size_t stage_b = order / TABLE_COUNT;
+        stages->tables[table].stages[stage_b] = i + 1;
+        stages->tables[table].balls[stage_b] = stages->balls[order];
     }
     return stages;
 }
@@ -266,13 +266,14 @@ void table_remove_back(table_full* table, table_tiles* tiles) {
 }
 
 void table_clear(table_full* table, table_tiles* tiles) {
-    size_t sa = table->stage_a, sb = table->stage_b;
-    memset(table, 0, sizeof(table_full));
-    table->stage_a = sa, table->stage_b = sb;
+    uintptr_t start = (uintptr_t) &table->byte_count;
+    uintptr_t end = (uintptr_t) (table + 1);
+    memset((void*) start, 0, end - start);
     memset(tiles, 0, sizeof(table_tiles));
 }
 
-void tile_table_lines(table_tiles* tiles, const table_line* lines, size_t count) {
+void tile_table_lines(table_tiles* tiles, const table_line* lines,
+                      size_t count) {
     for (size_t i = 0; i < count; i++)
         tile_table_line(tiles, lines + i, NULL, 0);
 }
