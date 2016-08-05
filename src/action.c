@@ -96,8 +96,8 @@ void history_clear(history* history) {
     memset(history, 0, sizeof(*history));
 }
 
-history* history_init() {
-    history* history = malloc(sizeof(*history));
-    memset(history, 0, sizeof(*history));
+history_table* history_init() {
+    history_table* history = malloc(sizeof(history_table));
+    memset(history, 0, sizeof(history_table));
     return history;
 }

@@ -15,7 +15,11 @@ typedef struct history {
     action_tool history[HISTORY_SIZE];
 } history;
 
-history* history_init();
+typedef struct history_table {
+    history table[MAP_COUNT];
+} history_table;
+
+history_table* history_init();
 void history_do(history* history, map_full* map, map_tiles* tiles,
                 size_t stage_b, size_t tool, size_t x, size_t y,
                 size_t* invalid_layers);
