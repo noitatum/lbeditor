@@ -7,7 +7,6 @@
 typedef struct action_tool {
     size_t tool, x1, y1, x2, y2;
     stage_ball* ball;
-    u8 backup[GRID_WIDTH];
 } action_tool;
 
 typedef struct history {

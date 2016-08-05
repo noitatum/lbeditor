@@ -108,61 +108,51 @@ void stages_write(lb_stages* stages, FILE* rom) {
     fwrite(map_table, sizeof(map_table), 1, rom);
 }
 
-void tile_map_wall(map_tiles* tiles, size_t x, size_t y, u8 wall,
-                     u8* backup, size_t n, size_t reverse) {
-    u8* tile = tiles->walls[y] + x;
-    if (backup) {
-        if (reverse) {
-            *tile = backup[n];
-            return;
-        }
-        backup[n] = *tile;
-    }
-    *tile |= wall;
-    if (*tile % 3)
-        *tile |= TILE_BLOCK;
+void tile_map_wall(map_tiles* tiles, size_t x, size_t y,
+                   size_t wall, int sign) {
+    wall_tile* tile = tiles->walls[y] + x;
+    tile->type_count[wall] += sign;
+    tile->type_flags |= 1 << wall;
+    if (!tile->type_count[wall])
+        tile->type_flags &= ~(1 << wall);
 }
 
-void tile_map_line(map_tiles* tiles, const map_line* line, u8* backup,
-                     size_t reverse) {
+void tile_map_line(map_tiles* tiles, const map_line* line, int sign) {
     u8 x = line->x & MAP_POS_MASK;
     u8 y = line->y & MAP_POS_MASK;
     u8 type = line->x & TYPE_MASK;
     if (type == TYPE_BODY) {
         if (line->y & FLAG_BODY_SLANT) {
-            static const u8 slope_map[4] = {0x0C, 0x09, 0x06, 0x03};
+            static const size_t slope_table[4] = {0x2, 0x3, 0x1, 0x0};
             for (size_t j = 0; j < 4; j++)
-                tile_map_wall(tiles, x + (j & 1), y + (j >> 1),
-                                slope_map[j], backup, j, reverse);
+                tile_map_wall(tiles, x + (j & 1), y + (j >> 1), 
+                              slope_table[j], sign);
         } else if (line->y & FLAG_BODY_BLOCK) {
-            tile_map_wall(tiles, x, y, TILE_BLOCK, backup, 0, reverse);
+            tile_map_wall(tiles, x, y, TILE_BLOCK, sign);
         } else {
             for (size_t j = 0; j < 4; j++)
                 tile_map_wall(tiles, x + (j & 1), y + (j >> 1),
-                                TILE_BLOCK, backup, j, reverse);
+                              TILE_BLOCK, sign);
         }
     } else if (type == TYPE_HORIZONTAL) {
         for (size_t j = x; j <= line->end; j++)
-            tile_map_wall(tiles, j, y, TILE_BLOCK, backup, j - x, reverse);
+            tile_map_wall(tiles, j, y, TILE_BLOCK, sign);
     } else if (type == TYPE_VERTICAL) {
         for (size_t j = y; j <= line->end; j++)
-            tile_map_wall(tiles, x, j, TILE_BLOCK, backup, j - y, reverse);
+            tile_map_wall(tiles, x, j, TILE_BLOCK, sign);
     } else {
-        static const u8 slope_map[4] = {0x03, 0x06, 0x0C, 0x09};
-        u8 tile = slope_map[line->y >> 6];
-        if (line->y & FLAG_LINE_BLOCK)
-            tile = TILE_BLOCK;
+        u8 tile = line->y & FLAG_LINE_BLOCK ? TILE_BLOCK : line->y >> 6;
         if (line->end > y)
             for (size_t j = x, k = y; k <= line->end; j++, k++)
-                tile_map_wall(tiles, j, k, tile, backup, j - x, reverse);
+                tile_map_wall(tiles, j, k, tile, sign);
         else
             for (size_t j = x, k = y; k >= line->end; j++, k--)
-                tile_map_wall(tiles, j, k, tile, backup, j - x, reverse);
+                tile_map_wall(tiles, j, k, tile, sign);
     }
 }
 
 int map_add_line(map_full* map, map_tiles* tiles, size_t x1, size_t y1,
-                    size_t x2, size_t y2, size_t tool, u8* backup) {
+                 size_t x2, size_t y2, size_t tool) {
     if (map->line_count == MAP_MAX_LINES)
         return -1;
     ssize_t x = x1, y = y1, end = y2;
@@ -200,41 +190,32 @@ int map_add_line(map_full* map, map_tiles* tiles, size_t x1, size_t y1,
     }
     map_line* line = map->lines + map->line_count;
     *line = (map_line) {x | type, y | wall, end};
-    tile_map_line(tiles, line, backup, 0);
+    tile_map_line(tiles, line, 1);
     map->byte_count += bytes;
-    map->line_count++;
+    map->line_count ++;
     return 0;
 }
 
-void tile_map_hole(map_tiles* tiles, map_hole* hole,
-                     u8* backup, size_t reverse) {
+void tile_map_hole(map_tiles* tiles, map_hole* hole, size_t add) {
     for (size_t j = 0; j < 4; j++) {
         u8* tile = tiles->holes[hole->y + (j >> 1)] + hole->x + (j & 1);
-        if (backup) {
-            if (reverse) {
-                *tile = backup[j];
-                continue;
-            }
-            backup[j] = *tile;
-        }
-        *tile |= 1 << j;
+        *tile &= ~(1 << j);
+        *tile |= (1 << j) * add;
     }
 }
 
-int map_add_hole(map_full* map, map_tiles* tiles, size_t x, size_t y,
-                   u8* backup) {
+int map_add_hole(map_full* map, map_tiles* tiles, size_t x, size_t y) {
     if (map->hole_count == MAP_MAX_HOLES)
         return -1;
     map_hole* hole = map->holes + map->hole_count;
     *hole = (map_hole) {x, y};
-    tile_map_hole(tiles, hole, backup, 0);
+    tile_map_hole(tiles, hole, 1);
     map->hole_count++;
     map->byte_count += sizeof(map_hole);
     return 0;
 }
 
-int map_add_back(map_full* map, map_tiles* tiles,
-                   size_t x1, size_t y1, size_t x2, size_t y2) {
+int map_add_back(map_full* map, size_t x1, size_t y1, size_t x2, size_t y2) {
     if (map->back_count == MAP_MAX_BACKS)
         return -1;
     size_t tx1 = x1, tx2 = x2, ty1 = y1, ty2 = y2;
@@ -243,30 +224,30 @@ int map_add_back(map_full* map, map_tiles* tiles,
     if (y1 > y2)
         ty1 = y2, ty2 = y1;
     map->backs[map->back_count] = (map_back) {tx1, ty1, tx2, ty2};
-    tiles->backs[tiles->back_count] = (map_back) {tx1, ty1, tx2, ty2};
-    tiles->back_count++;
     map->back_count++;
     map->byte_count += sizeof(map_back);
     return 0;
 }
 
-void map_remove_line(map_full* map, map_tiles* tiles, u8* backup) {
+void map_remove_line(map_full* map, map_tiles* tiles, size_t index) {
     map->line_count--;
     map->byte_count -= sizeof(map_line) -
-        ((map->lines[map->line_count].x & TYPE_BODY) == TYPE_BODY);
-    tile_map_line(tiles, map->lines + map->line_count, backup, 1);
+        ((map->lines[index].x & TYPE_BODY) == TYPE_BODY);
+    tile_map_line(tiles, map->lines + index, -1);
+    map->lines[index] = map->lines[map->line_count];
 }
 
-void map_remove_hole(map_full* map, map_tiles* tiles, u8* backup) {
+void map_remove_hole(map_full* map, map_tiles* tiles, size_t index) {
     map->hole_count--;
     map->byte_count -= sizeof(map_hole);
-    tile_map_hole(tiles, map->holes + map->hole_count, backup, 1);
+    tile_map_hole(tiles, map->holes + index, 0);
+    map->holes[index] = map->holes[map->hole_count];
 }
 
-void map_remove_back(map_full* map, map_tiles* tiles) {
+void map_remove_back(map_full* map, size_t index) {
     map->back_count--;
     map->byte_count -= sizeof(map_back);
-    tiles->back_count--;
+    map->backs[index] = map->backs[map->back_count];
 }
 
 void map_clear(map_full* map, map_tiles* tiles) {
@@ -279,14 +260,12 @@ void map_clear(map_full* map, map_tiles* tiles) {
 void tile_map_lines(map_tiles* tiles, const map_line* lines,
                       size_t count) {
     for (size_t i = 0; i < count; i++)
-        tile_map_line(tiles, lines + i, NULL, 0);
+        tile_map_line(tiles, lines + i, 1);
 }
 
 void init_map_tiles(map_tiles* tiles, map_full* map) {
     memset(tiles, 0, sizeof(*tiles));
     tile_map_lines(tiles, map->lines, map->line_count);
     for (size_t i = 0; i < map->hole_count; i++)
-        tile_map_hole(tiles, map->holes + i, NULL, 0);
-    memcpy(tiles->backs, map->backs, sizeof(map->backs));
-    tiles->back_count = map->back_count;
+        tile_map_hole(tiles, map->holes + i, 1);
 }

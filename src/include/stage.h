@@ -12,12 +12,11 @@
 #define STAGE_COUNT         60
 #define MAP_COUNT           30
 
-#define MAP_MAX_LINES       256
+#define MAP_MAX_LINES       255
 #define MAP_MAX_BACKS       32
-#define MAP_MAX_HOLES       256
+#define MAP_MAX_HOLES       255
 #define BALL_COUNT          8
 
-#define TILE_BLOCK          0x0F
 #define SLOPE_NW            0x00
 #define SLOPE_NE            0x40
 #define SLOPE_SE            0x80
@@ -31,6 +30,8 @@
 #define FLAG_BODY_BLOCK     0x40
 #define FLAG_BODY_SQUARE    0x00
 #define FLAG_LINE_BLOCK     0x20
+#define TILE_BLOCK          0x04
+#define TILE_BLOCK_FLAGS    0x0F
 
 #define ROM_MAP_DATA_BYTES      0x0AC5
 #define ROM_MAP_DATA_START      0x1566
@@ -70,26 +71,26 @@ typedef struct lb_stages {
     map_full maps[MAP_COUNT];
 } lb_stages;
 
+typedef struct wall_tile {
+    u8 type_count[5];
+    u8 type_flags;
+} wall_tile;
+
 typedef struct map_tiles {
-    u8 walls[GRID_HEIGHT][GRID_WIDTH];
+    wall_tile walls[GRID_HEIGHT][GRID_WIDTH];
     u8 holes[GRID_HEIGHT][GRID_WIDTH];
-    map_back backs[MAP_MAX_BACKS];
-    size_t back_count;
 } map_tiles;
 
 lb_stages* stages_init(FILE* rom);
 void stages_write(lb_stages* stages, FILE* rom);
 void tile_map_lines(map_tiles* tiles, const map_line* lines, size_t count);
-void tile_map_line(map_tiles* tiles, const map_line* line, u8* backup,
-                     size_t reverse);
+void tile_map_line(map_tiles* tiles, const map_line* line, int sign);
 int map_add_line(map_full* map, map_tiles* tiles, size_t x1, size_t y1,
-                    size_t x2, size_t y2, size_t tool, u8* backup);
-int map_add_hole(map_full* map, map_tiles* tiles, size_t x, size_t y,
-                   u8* backup);
-int map_add_back(map_full* map, map_tiles* tiles,
-                   size_t x1, size_t y1, size_t x2, size_t y2);
-void map_remove_line(map_full* map, map_tiles* tiles, u8* backup);
-void map_remove_hole(map_full* map, map_tiles* tiles, u8* backup);
-void map_remove_back(map_full* map, map_tiles* tiles);
+                    size_t x2, size_t y2, size_t tool);
+int map_add_hole(map_full* map, map_tiles* tiles, size_t x, size_t y);
+int map_add_back(map_full* map, size_t x1, size_t y1, size_t x2, size_t y2);
+void map_remove_line(map_full* map, map_tiles* tiles, size_t index);
+void map_remove_hole(map_full* map, map_tiles* tiles, size_t index);
+void map_remove_back(map_full* map, size_t index);
 void map_clear(map_full* map, map_tiles* tiles);
 void init_map_tiles(map_tiles* tiles, map_full* map);

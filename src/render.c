@@ -72,7 +72,6 @@ const size_t block_order[256] = {
 };
 const size_t hole_order[16] = {0xF, 0x2, 0x3, 0x7, 0x1, 0x6, 0xC, 0xA,
                                0x0, 0xD, 0x4, 0xB, 0x5, 0x9, 0x8, 0xE};
-const size_t slope_order[4] = {0, 1, 3, 2};
 
 const SDL_Rect screen_area = {0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
 
@@ -122,10 +121,10 @@ void render_dust(SDL_Renderer* renderer, lb_sprites* sprites, size_t stage) {
             SDL_RenderCopy(renderer, sprites->dusts[3], NULL, &dest);
 }
 
-void render_back(SDL_Renderer* renderer, map_tiles* tiles) {
+void render_back(SDL_Renderer* renderer, map_full* map) {
     set_render_color(renderer, NES_PALETTE[COLOR_BACK]);
-    for (size_t i = 0; i < tiles->back_count; i++) {
-        map_back* b = tiles->backs + i;
+    for (size_t i = 0; i < map->back_count; i++) {
+        map_back* b = map->backs + i;
         SDL_Rect rect = {b->x1 * TSIZE, b->y1 * TSIZE,
                          (b->x2 - b->x1 + 1) * TSIZE,
                          (b->y2 - b->y1 + 1) * TSIZE};
@@ -145,14 +144,21 @@ void render_holes(SDL_Renderer* renderer, map_tiles* tiles,
     }
 }
 
+static const u8 type_table[32] = {
+    0x0, 0x3, 0x6, 0xF, 0xC, 0xF, 0xF, 0xF, 
+    0x9, 0xF, 0xF, 0xF, 0xF, 0xF, 0xF, 0xF,
+    0xF, 0xF, 0xF, 0xF, 0xF, 0xF, 0xF, 0xF,
+    0xF, 0xF, 0xF, 0xF, 0xF, 0xF, 0xF, 0xF,
+};
+
 u16 get_surroundings(map_tiles* tiles, size_t y, size_t x) {
     static const int offset_x[9] = {-1, -1, 0, 1, 1,  1,  0, -1, -1};
     static const int offset_y[9] = { 0,  1, 1, 1, 0, -1, -1, -1,  0};
     static const u8 flags[9] = {0x4, 0x6, 0x2, 0x3, 0x1, 0x9, 0x8, 0xC, 0x4};
     u16 sur = 0;
     for (size_t i = 0; i < 9; i++) {
-        u8 wall = tiles->walls[y + offset_y[i]][x + offset_x[i]];
-        sur = (sur << 1) | ((wall & flags[i]) == flags[i]);
+        u8 type = tiles->walls[y + offset_y[i]][x + offset_x[i]].type_flags;
+        sur = (sur << 1) | ((type_table[type] & flags[i]) == flags[i]);
     }
     return sur;
 }
@@ -162,17 +168,18 @@ void render_walls(SDL_Renderer* renderer, map_tiles* tiles,
     for (size_t j = 1; j < GRID_HEIGHT - 1; j++) {
         for (size_t i = 1; i < GRID_WIDTH - 1; i++) {
             SDL_Rect dest = {i * TSIZE, j * TSIZE, TSIZE, TSIZE};
-            size_t wall = tiles->walls[j][i];
-            if (!wall)
+            size_t type = type_table[tiles->walls[j][i].type_flags];
+            if (!type)
                 continue;
             // FIXME: This is not how it works in the game
             u16 sur = get_surroundings(tiles, j, i);
-            if (wall == TILE_BLOCK) {
+            if (type == TILE_BLOCK_FLAGS) {
                 SDL_Texture* block = sprites->blocks[block_order[sur & 0xFF]];
                 SDL_RenderCopy(renderer, block, NULL, &dest);
             } else {
                 static const size_t slope_table[8] = {4, 3, 4, 3, 2, 1, 2, 0};
-                size_t slope = slope_order[wall / 3 - 1];
+                static const size_t slope_order[4] = {0, 1, 3, 2};
+                size_t slope = slope_order[type / 3 - 1];
                 size_t index = slope_table[(sur >> (slope * 2)) & 0x7];
                 SDL_Texture* tte = sprites->slopes[index * 4 + slope];
                 SDL_RenderCopy(renderer, tte, NULL, &dest);
@@ -234,7 +241,7 @@ void render_invalid(lb_render* render, lb_sprites* sprites, map_full* map,
     }
     if (render->invalid_layers & (1 << LAYER_BACK)) {
         SDL_SetRenderTarget(render->renderer, render->layers[LAYER_BACK]);
-        render_back(render->renderer, tiles);
+        render_back(render->renderer, map);
     }
     if (render->invalid_layers & (1 << LAYER_HOLES)) {
         SDL_SetRenderTarget(render->renderer, render->layers[LAYER_HOLES]);
