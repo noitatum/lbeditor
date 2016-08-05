@@ -110,11 +110,11 @@ void stages_write(lb_stages* stages, FILE* rom) {
 
 void tile_map_wall(map_tiles* tiles, size_t x, size_t y,
                    size_t wall, int sign) {
-    wall_tile* tile = tiles->walls[y] + x;
-    tile->type_count[wall] += sign;
-    tile->type_flags |= 1 << wall;
-    if (!tile->type_count[wall])
-        tile->type_flags &= ~(1 << wall);
+    map_tile* tile = tiles->tiles[y] + x;
+    tile->wall_count[wall] += sign;
+    tile->wall_flags |= 1 << wall;
+    if (!tile->wall_count[wall])
+        tile->wall_flags &= ~(1 << wall);
 }
 
 void tile_map_line(map_tiles* tiles, const map_line* line, int sign) {
@@ -198,9 +198,9 @@ int map_add_line(map_full* map, map_tiles* tiles, size_t x1, size_t y1,
 
 void tile_map_hole(map_tiles* tiles, map_hole* hole, size_t add) {
     for (size_t j = 0; j < 4; j++) {
-        u8* tile = tiles->holes[hole->y + (j >> 1)] + hole->x + (j & 1);
-        *tile &= ~(1 << j);
-        *tile |= (1 << j) * add;
+        map_tile* tile = tiles->tiles[hole->y + (j >> 1)] + hole->x + (j & 1);
+        tile->hole_flags &= ~(1 << j);
+        tile->hole_flags |= (1 << j) * add;
     }
 }
 

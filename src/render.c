@@ -137,7 +137,7 @@ void render_holes(SDL_Renderer* renderer, map_tiles* tiles,
     for (size_t j = 1; j < GRID_HEIGHT - 1; j++) {
         for (size_t i = 1; i < GRID_WIDTH - 1; i++) {
             SDL_Rect dest = {i * TSIZE, j * TSIZE, TSIZE, TSIZE};
-            size_t hole = hole_order[tiles->holes[j][i]];
+            size_t hole = hole_order[tiles->tiles[j][i].hole_flags];
             if (hole != 0xF)
                 SDL_RenderCopy(renderer, sprites->holes[hole], NULL, &dest);
         }
@@ -157,7 +157,7 @@ u16 get_surroundings(map_tiles* tiles, size_t y, size_t x) {
     static const u8 flags[9] = {0x4, 0x6, 0x2, 0x3, 0x1, 0x9, 0x8, 0xC, 0x4};
     u16 sur = 0;
     for (size_t i = 0; i < 9; i++) {
-        u8 type = tiles->walls[y + offset_y[i]][x + offset_x[i]].type_flags;
+        u8 type = tiles->tiles[y + offset_y[i]][x + offset_x[i]].wall_flags;
         sur = (sur << 1) | ((type_table[type] & flags[i]) == flags[i]);
     }
     return sur;
@@ -168,7 +168,7 @@ void render_walls(SDL_Renderer* renderer, map_tiles* tiles,
     for (size_t j = 1; j < GRID_HEIGHT - 1; j++) {
         for (size_t i = 1; i < GRID_WIDTH - 1; i++) {
             SDL_Rect dest = {i * TSIZE, j * TSIZE, TSIZE, TSIZE};
-            size_t type = type_table[tiles->walls[j][i].type_flags];
+            size_t type = type_table[tiles->tiles[j][i].wall_flags];
             if (!type)
                 continue;
             // FIXME: This is not how it works in the game

@@ -71,14 +71,15 @@ typedef struct lb_stages {
     map_full maps[MAP_COUNT];
 } lb_stages;
 
-typedef struct wall_tile {
-    u8 type_count[5];
-    u8 type_flags;
-} wall_tile;
+typedef struct map_tile {
+    u8 wall_count[5];
+    u8 wall_flags;
+    u8 hole_flags;
+    u8 padding;
+} map_tile;
 
 typedef struct map_tiles {
-    wall_tile walls[GRID_HEIGHT][GRID_WIDTH];
-    u8 holes[GRID_HEIGHT][GRID_WIDTH];
+    map_tile tiles[GRID_HEIGHT][GRID_WIDTH];
 } map_tiles;
 
 lb_stages* stages_init(FILE* rom);
