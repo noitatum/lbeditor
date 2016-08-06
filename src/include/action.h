@@ -5,18 +5,18 @@
 #define HISTORY_SIZE 256
 
 typedef struct action_tool {
-    size_t remove, tool, x1, y1, x2, y2;
-    stage_ball* ball;
+    size_t remove, stage_b, tool, x1, y1, x2, y2;
     int index;
     union {
         map_line line;
         map_hole hole;
         map_back back;
+        stage_ball ball;
     };
 } action_tool;
 
 typedef struct history {
-    size_t index, count, active;
+    size_t index, count;
     action_tool history[HISTORY_SIZE];
 } history;
 

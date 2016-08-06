@@ -6,18 +6,20 @@
 void history_apply(history* history, map_full* map, map_tiles* tiles,
                    size_t* invalid_layer) {
     action_tool* action = history->history + history->index;
-    size_t layer = 0;
+    size_t layer = 0, tool = action->tool;
     int index = 0;
-    if (action->ball) {
+    if (IS_TOOL_BALL(tool)) {
+        size_t x = action->x2 / 2, y = action->y2 / 2;
+        index = tool - TOOL_BALL_0;
+        action->ball = map->balls[action->stage_b][index];
         if (action->remove)
-            action->ball->x = action->ball->y = 0;
+            map->balls[action->stage_b][index] = (stage_ball) {0, 0};
         else
-            action->ball->x = action->x2 / 2, action->ball->y = action->y2 / 2;
+            map->balls[action->stage_b][index] = (stage_ball) {y, x};
         layer = 1 << LAYER_BALLS;
     } else {
         size_t x1 = action->x1 / TSIZE, y1 = action->y1 / TSIZE;
         size_t x2 = action->x2 / TSIZE, y2 = action->y2 / TSIZE;
-        size_t tool = action->tool;
         if (tool == TOOL_HOLE) {
             if (action->remove) {
                 index = map_find_hole(map, x2, y2);
@@ -68,12 +70,7 @@ void history_do(history* history, map_full* map, map_tiles* tiles,
                 size_t stage_b, size_t tool, size_t x, size_t y,
                 size_t remove, size_t* invalid_layer) {
     action_tool* action = history->history + history->index;
-    action->x1 = action->x2 = x, action->y1 = action->y2 = y;
-    action->tool = tool, action->ball = NULL, action->remove = remove;;
-    if (IS_TOOL_BALL(tool)) {
-        action->ball = map->balls[stage_b] + tool - TOOL_BALL_0;
-        action->x1 = action->ball->x, action->y1 = action->ball->y;
-    }
+    *action = (action_tool) {remove, stage_b, tool, x, y, x, y, 0, {{0}}};
     history_apply(history, map, tiles, invalid_layer);
 }
 
@@ -111,9 +108,8 @@ void history_undo(history* history, map_full* map, map_tiles* tiles,
                 map_remove_line(map, tiles, map->line_count - 1);
             *invalid_layer |= 1 << LAYER_WALLS;
         }
-    } else if (action->ball) {
-        action->ball->x = action->x1;
-        action->ball->y = action->y1;
+    } else if (IS_TOOL_BALL(action->tool)) {
+        map->balls[action->stage_b][action->index] = action->ball;
         *invalid_layer |= 1 << LAYER_BALLS;
     }
     // Redraw the hud
