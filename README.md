@@ -1,5 +1,5 @@
 # Description
-A GPLv3 licensed level editor for Lunar Ball written in C/SDL.
+A GPLv3 licensed level editor for the Famicom game Lunar Ball written in C/SDL.
 
 # How to compile
 
@@ -18,11 +18,12 @@ I still haven't tried doing this, but it should work using mingw-w64 and probabl
 ## Notes
 
 Remember to type `make clean` if you compiled for either platform and want to compile for the other one.
-It only works for the japanese version of the game.
 
 # How to use
 
 Drag the rom file to the executable, or pass it as a parameter. When you close the editor, it should save your changes in a new rom `output.nes`, you can also reopen this file if you want.
+
+For now, it only works with the japanese version of the game.
 
 ## Controls
 
@@ -32,7 +33,7 @@ Drag the rom file to the executable, or pass it as a parameter. When you close t
 + Left/Right Arrow - Change map.
 + Up Arrow - Switch stage, there is two per map.
 + Down Arrow - Change toolbox.
-+ Delete key - Clear entire map, this cannot be undone!
++ Delete key - Clear entire map, this can't be undone!
 + Keys 0 to 9 - Select tool from toolbox.
 
 # Screenshots
