@@ -38,7 +38,7 @@ SDL_Texture* create_texture(SDL_Renderer* renderer, size_t x, size_t y) {
     return tte;
 }
 
-SDL_Texture* create_texture_tile(SDL_Renderer* renderer, FILE* rom, 
+SDL_Texture* create_texture_tile(SDL_Renderer* renderer, FILE* rom,
                                  rgba_palette palette) {
     SDL_Texture* tte = create_texture(renderer, TILE_SIZE, TILE_SIZE);
     u64 data1, data2;
@@ -79,7 +79,7 @@ SDL_Texture* create_texture_ball(SDL_Renderer* renderer, FILE* rom,
     SDL_Texture* ball = create_texture(renderer, BIG_SIZE, BIG_SIZE);
     for (size_t x = 0; x < 2; x++)
         for (size_t y = 0; y < 2; y++)
-            init_big_tile_corner(renderer, rom, ball, palette, x, y); 
+            init_big_tile_corner(renderer, rom, ball, palette, x, y);
     return ball;
 }
 
@@ -116,7 +116,7 @@ lb_sprites* sprites_init(SDL_Renderer* renderer, FILE* rom) {
     // Initialize map sprites: holes and walls
     sprites_tiles_init(renderer, rom, rgba, spr->blocks, SPRITE_MAP_SUM_COUNT);
     // Initialize background dust sprites
-    spr->crater = create_texture_crater(renderer, rom, rgba); 
+    spr->crater = create_texture_crater(renderer, rom, rgba);
     sprites_tiles_init(renderer, rom, rgba, spr->dusts, SPRITE_DUST_COUNT);
     return spr;
 }

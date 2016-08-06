@@ -5,8 +5,7 @@
 #include <string.h>
 #include <hud.h>
 
-#define MAP_END_BIT    0x80
-#define MAP_POS_MASK   0x1F
+#define MAP_END_BIT         0x80
 
 void map_init(FILE* rom, map_full* map) {
     size_t i;
@@ -118,14 +117,14 @@ void tile_map_wall(map_tiles* tiles, size_t x, size_t y,
 }
 
 void tile_map_line(map_tiles* tiles, const map_line* line, int sign) {
-    u8 x = line->x & MAP_POS_MASK;
-    u8 y = line->y & MAP_POS_MASK;
+    u8 x = line->x & LINE_POS_MASK;
+    u8 y = line->y & LINE_POS_MASK;
     u8 type = line->x & TYPE_MASK;
     if (type == TYPE_BODY) {
         if (line->y & FLAG_BODY_SLANT) {
             static const size_t slope_table[4] = {0x2, 0x3, 0x1, 0x0};
             for (size_t j = 0; j < 4; j++)
-                tile_map_wall(tiles, x + (j & 1), y + (j >> 1), 
+                tile_map_wall(tiles, x + (j & 1), y + (j >> 1),
                               slope_table[j], sign);
         } else if (line->y & FLAG_BODY_BLOCK) {
             tile_map_wall(tiles, x, y, TILE_BLOCK, sign);
@@ -151,12 +150,22 @@ void tile_map_line(map_tiles* tiles, const map_line* line, int sign) {
     }
 }
 
-int map_add_line(map_full* map, map_tiles* tiles, size_t x1, size_t y1,
-                 size_t x2, size_t y2, size_t tool) {
+void map_add_line(map_full* map, map_tiles* tiles, const map_line* line,
+                  size_t index) {
+    map->lines[map->line_count] = map->lines[index];
+    map->lines[index] = *line;
+    tile_map_line(tiles, line, 1);
+    map->byte_count += sizeof(map_line) - ((line->x & TYPE_BODY) == TYPE_BODY);
+    map->line_count++;
+}
+
+
+int map_add_line_action(map_full* map, map_tiles* tiles, size_t x1, size_t y1,
+                        size_t x2, size_t y2, size_t tool) {
     if (map->line_count == MAP_MAX_LINES)
         return -1;
-    ssize_t x = x1, y = y1, end = y2;
-    size_t wall = 0, type = TYPE_DIAGONAL, bytes = sizeof(map_line);
+    int x = x1, y = y1, end = y2;
+    size_t wall = 0, type = TYPE_DIAGONAL, index = map->line_count;
     if ((x1 == x2 && y1 == y2 && tool == TOOL_BLOCK) ||
         tool == TOOL_SLANT || tool == TOOL_SQUARE) {
         x = x2, y = y2, wall = FLAG_BODY_BLOCK, type = TYPE_BODY;
@@ -164,7 +173,6 @@ int map_add_line(map_full* map, map_tiles* tiles, size_t x1, size_t y1,
             wall = FLAG_BODY_SLANT;
         else if (tool == TOOL_SQUARE)
             wall = FLAG_BODY_SQUARE;
-        bytes--;
     } else if (y1 == y2 && tool == TOOL_BLOCK) {
         end = x2, type = TYPE_HORIZONTAL;
         if (x1 > x2)
@@ -181,19 +189,15 @@ int map_add_line(map_full* map, map_tiles* tiles, size_t x1, size_t y1,
         if (x1 > x2)
             x = x1 - (y1 > y2 ? y1 - y2 : y2 - y1), y = y2, end = y1;
         // Check bounds and correct if necessary
-        ssize_t sign = (end > y) * 2 - 1;
+        int sign = (end > y) * 2 - 1;
         if (x < MAP_MIN_X) {
             y += sign * (MAP_MIN_X - x);
             x = MAP_MIN_X;
         } else if (x + sign * (end - y) > MAP_MAX_X)
             end = y + sign * (MAP_MAX_X - x);
     }
-    map_line* line = map->lines + map->line_count;
-    *line = (map_line) {x | type, y | wall, end};
-    tile_map_line(tiles, line, 1);
-    map->byte_count += bytes;
-    map->line_count ++;
-    return 0;
+    map_add_line(map, tiles, &(map_line){x | type, y | wall, end}, index);
+    return index;
 }
 
 void tile_map_hole(map_tiles* tiles, map_hole* hole, size_t add) {
@@ -204,29 +208,41 @@ void tile_map_hole(map_tiles* tiles, map_hole* hole, size_t add) {
     }
 }
 
-int map_add_hole(map_full* map, map_tiles* tiles, size_t x, size_t y) {
-    if (map->hole_count == MAP_MAX_HOLES)
-        return -1;
-    map_hole* hole = map->holes + map->hole_count;
-    *hole = (map_hole) {x, y};
+void map_add_hole(map_full* map, map_tiles* tiles, map_hole* hole,
+                  size_t index) {
+    map->holes[map->hole_count] = map->holes[index];
+    map->holes[index] = *hole;
     tile_map_hole(tiles, hole, 1);
     map->hole_count++;
     map->byte_count += sizeof(map_hole);
-    return 0;
 }
 
-int map_add_back(map_full* map, size_t x1, size_t y1, size_t x2, size_t y2) {
+int map_add_hole_action(map_full* map, map_tiles* tiles, size_t x, size_t y) {
+    if (map->hole_count == MAP_MAX_HOLES)
+        return -1;
+    size_t index = map->hole_count;
+    map_add_hole(map, tiles, &(map_hole){x, y}, index);
+    return index;
+}
+
+void map_add_back(map_full* map, map_back* back, size_t index) {
+    map->backs[map->back_count] = map->backs[index];
+    map->backs[index] = *back;
+    map->back_count++;
+    map->byte_count += sizeof(map_back);
+}
+
+int map_add_back_action(map_full* map, size_t x1, size_t y1,
+                        size_t x2, size_t y2) {
     if (map->back_count == MAP_MAX_BACKS)
         return -1;
-    size_t tx1 = x1, tx2 = x2, ty1 = y1, ty2 = y2;
+    size_t tx1 = x1, tx2 = x2, ty1 = y1, ty2 = y2, index = map->back_count;
     if (x1 > x2)
         tx1 = x2, tx2 = x1;
     if (y1 > y2)
         ty1 = y2, ty2 = y1;
-    map->backs[map->back_count] = (map_back) {tx1, ty1, tx2, ty2};
-    map->back_count++;
-    map->byte_count += sizeof(map_back);
-    return 0;
+    map_add_back(map, &(map_back){tx1, ty1, tx2, ty2}, index);
+    return index;
 }
 
 void map_remove_line(map_full* map, map_tiles* tiles, size_t index) {
@@ -248,6 +264,58 @@ void map_remove_back(map_full* map, size_t index) {
     map->back_count--;
     map->byte_count -= sizeof(map_back);
     map->backs[index] = map->backs[map->back_count];
+}
+
+int map_find_line(map_full* map, size_t lx, size_t ly) {
+    for (size_t i = 0; i < map->line_count; i++) {
+        map_line* line = map->lines + i;
+        size_t x = line->x & LINE_POS_MASK, y = line->y & LINE_POS_MASK;
+        size_t end = line->end, type = line->x & TYPE_MASK;
+        if (type == TYPE_BODY) {
+            if (line->y & FLAG_BODY_SLANT || !(line->y & FLAG_BODY_BLOCK)) {
+                if ((lx == x || lx == x + 1) && (ly == y || ly == y + 1))
+                    return i;
+            } else {
+                if (lx == x && ly == y)
+                    return i;
+            }
+        } else if (type == TYPE_HORIZONTAL) {
+            if (ly == y && lx >= x && lx <= end)
+                return i;
+        } else if (type == TYPE_VERTICAL) {
+            if (lx == x && ly >= y && ly <= end)
+                return i;
+        } else {
+            if (y <= end) {
+                if (lx - x == ly - y && ly >= y && ly <= end)
+                    return i;
+            } else {
+                if (lx - x == y - ly && ly <= y && ly >= end)
+                    return i;
+            }
+        }
+    }
+    return -1;
+}
+
+int map_find_hole(map_full* map, size_t hx, size_t hy) {
+    for (size_t i = 0; i < map->hole_count; i++) {
+        map_hole* hole = map->holes + i;
+        size_t x = hole->x, y = hole->y;
+        if ((hx == x || hx == x + 1) && (hy == y || hy == y + 1))
+            return i;
+    }
+    return -1;
+}
+
+int map_find_back(map_full* map, size_t bx, size_t by) {
+    for (size_t i = 0; i < map->back_count; i++) {
+        map_back* back = map->backs + i;
+        if (bx >= back->x1 && bx <= back->x2 &&
+            by >= back->y1 && by <= back->y2)
+            return i;
+    }
+    return -1;
 }
 
 void map_clear(map_full* map, map_tiles* tiles) {

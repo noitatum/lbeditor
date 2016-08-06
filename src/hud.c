@@ -15,7 +15,7 @@ const SDL_Rect hud_back = {2 * TSIZE, 2 * TSIZE, 28 * TSIZE, 4 * TSIZE};
 const SDL_Rect toolbox =  {2 * TSIZE, 2 * TSIZE, 10 * TSIZE, 4 * TSIZE};
 const SDL_Rect stages_area = {13 * TSIZE, 4 * TSIZE, 6 * TSIZE, TSIZE};
 
-size_t in_rect(const SDL_Rect* r, ssize_t x, ssize_t y) {
+size_t in_rect(const SDL_Rect* r, int x, int y) {
     return x >= r->x && y >= r->y && x - r->x < r->w && y - r->y < r->h;
 }
 

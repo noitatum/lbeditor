@@ -32,6 +32,7 @@
 #define FLAG_LINE_BLOCK     0x20
 #define TILE_BLOCK          0x04
 #define TILE_BLOCK_FLAGS    0x0F
+#define LINE_POS_MASK       0x1F
 
 #define ROM_MAP_DATA_BYTES      0x0AC5
 #define ROM_MAP_DATA_START      0x1566
@@ -65,8 +66,8 @@ typedef struct map_full {
 } map_full;
 
 typedef struct lb_stages {
-    size_t     byte_count;
-    u8         order[STAGE_COUNT];
+    size_t byte_count;
+    u8 order[STAGE_COUNT];
     stage_ball balls[STAGE_COUNT][BALL_COUNT];
     map_full maps[MAP_COUNT];
 } lb_stages;
@@ -86,12 +87,21 @@ lb_stages* stages_init(FILE* rom);
 void stages_write(lb_stages* stages, FILE* rom);
 void tile_map_lines(map_tiles* tiles, const map_line* lines, size_t count);
 void tile_map_line(map_tiles* tiles, const map_line* line, int sign);
-int map_add_line(map_full* map, map_tiles* tiles, size_t x1, size_t y1,
-                    size_t x2, size_t y2, size_t tool);
-int map_add_hole(map_full* map, map_tiles* tiles, size_t x, size_t y);
-int map_add_back(map_full* map, size_t x1, size_t y1, size_t x2, size_t y2);
+void map_add_line(map_full* map, map_tiles* tiles, const map_line* line,
+                  size_t index);
+int map_add_line_action(map_full* map, map_tiles* tiles, size_t x1, size_t y1,
+                        size_t x2, size_t y2, size_t tool);
+void map_add_hole(map_full* map, map_tiles* tiles, map_hole* hole,
+                  size_t index);
+int map_add_hole_action(map_full* map, map_tiles* tiles, size_t x, size_t y);
+void map_add_back(map_full* map, map_back* back, size_t index);
+int map_add_back_action(map_full* map, size_t x1, size_t y1,
+                        size_t x2, size_t y2);
 void map_remove_line(map_full* map, map_tiles* tiles, size_t index);
 void map_remove_hole(map_full* map, map_tiles* tiles, size_t index);
 void map_remove_back(map_full* map, size_t index);
+int map_find_line(map_full* map, size_t lx, size_t ly);
+int map_find_hole(map_full* map, size_t hx, size_t hy);
+int map_find_back(map_full* map, size_t bx, size_t by);
 void map_clear(map_full* map, map_tiles* tiles);
 void init_map_tiles(map_tiles* tiles, map_full* map);
