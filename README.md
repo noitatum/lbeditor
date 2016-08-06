@@ -37,4 +37,4 @@ Drag the rom file to the executable, or pass it as a parameter. When you close t
 
 ## Screenshots
 
-![Stage 05](/screenshot/stage05.png?raw=true)
+![Stage 05](screenshot/stage05.png "Editing Stage 05")
