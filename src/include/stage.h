@@ -76,7 +76,7 @@ typedef struct map_tile {
     u8 wall_count[5];
     u8 wall_flags;
     u8 hole_flags;
-    u8 padding;
+    u8 hole_count;
 } map_tile;
 
 typedef struct map_tiles {
