@@ -6,6 +6,7 @@
 #include <hud.h>
 
 #define MAP_END_BIT         0x80
+#define BTILE_ALIGN(pos)    ((pos) & ~1ULL)
 
 void map_init(FILE* rom, map_full* map) {
     size_t i;
@@ -243,7 +244,9 @@ int map_add_back_action(map_full* map, size_t x1, size_t y1,
         tx1 = x2, tx2 = x1;
     if (y1 > y2)
         ty1 = y2, ty2 = y1;
-    map_add_back(map, &(map_back){tx1, ty1, tx2, ty2}, index);
+    map_add_back(map, &(map_back){BTILE_ALIGN(tx1), BTILE_ALIGN(ty1),
+                                  BTILE_ALIGN(tx2) + 1,
+                                  BTILE_ALIGN(ty2) + 1}, index);
     return index;
 }
 

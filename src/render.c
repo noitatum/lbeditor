@@ -193,7 +193,8 @@ void render_balls(SDL_Renderer* renderer, stage_ball* balls,
     for (size_t i = 0; i < BALL_COUNT; i++) {
         if (balls[i].x == 0)
             continue;
-        SDL_Rect dest = {balls[i].x * 2 - 16, balls[i].y * 2 - 16, 32, 32};
+        SDL_Rect dest = {balls[i].x * 2 - TSIZE, (balls[i].y + 1) * 2 - TSIZE,
+                         BSIZE, BSIZE};
         SDL_RenderCopy(renderer, sprites->balls[i], NULL, &dest);
     }
 }
