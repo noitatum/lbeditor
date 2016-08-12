@@ -6,7 +6,11 @@
 #include <hud.h>
 #include <integer.h>
 
-#define TSIZE           16
+// TSCALE is how much we scale tiles, can be changed
+#define TSCALE          2
+#define TILE_SIZE       8
+#define BTILE_SIZE      (TILE_SIZE * 2)
+#define TSIZE           (TILE_SIZE * TSCALE)
 #define BSIZE           (TSIZE * 2)
 #define SCREEN_WIDTH    (TSIZE * GRID_WIDTH)
 #define SCREEN_HEIGHT   (TSIZE * GRID_HEIGHT)
@@ -28,6 +32,13 @@
 #define COLOR_WHITE     0x30
 #define COLOR_CYAN      0x3B
 #define COLOR_NONE      0x3F
+
+#define TILE(tile)          (TSIZE * (tile))
+#define BTILE(tile)         (BSIZE * (tile))
+#define TILE_RECT(x, y)     ((const SDL_Rect){TILE(x), TILE(y), TSIZE, TSIZE})
+#define BTILE_RECT(x, y)    ((const SDL_Rect){BTILE(x), BTILE(y), BSIZE, BSIZE})
+#define TILE_AREA_RECT(x, y, w, h) \
+    ((const SDL_Rect){TILE(x), TILE(y), TILE(w), TILE(h)})
 
 typedef struct rgba_color {
     u8 r, g, b, a;

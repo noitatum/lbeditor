@@ -5,8 +5,6 @@
 #include <stdlib.h>
 #include <integer.h>
 
-#define TILE_SIZE 8
-#define BIG_SIZE 16
 #define TILE_BYTE_SIZE 16
 #define ROM_PPU_OFFSET 0x4010
 #define PPU_LETTERS_OFFSET (0x120 * TILE_BYTE_SIZE)
@@ -66,7 +64,7 @@ void init_big_tile_corner(SDL_Renderer* renderer, FILE* rom, SDL_Texture* big,
 
 SDL_Texture* create_texture_crater(SDL_Renderer* renderer, FILE* rom,
                                    rgba_palette palette) {
-    SDL_Texture* crater = create_texture(renderer, BIG_SIZE, BIG_SIZE);
+    SDL_Texture* crater = create_texture(renderer, BTILE_SIZE, BTILE_SIZE);
     init_big_tile_corner(renderer, rom, crater, palette, 1, 1);
     init_big_tile_corner(renderer, rom, crater, palette, 0, 1);
     init_big_tile_corner(renderer, rom, crater, palette, 0, 0);
@@ -76,7 +74,7 @@ SDL_Texture* create_texture_crater(SDL_Renderer* renderer, FILE* rom,
 
 SDL_Texture* create_texture_ball(SDL_Renderer* renderer, FILE* rom,
                                  rgba_palette palette) {
-    SDL_Texture* ball = create_texture(renderer, BIG_SIZE, BIG_SIZE);
+    SDL_Texture* ball = create_texture(renderer, BTILE_SIZE, BTILE_SIZE);
     for (size_t x = 0; x < 2; x++)
         for (size_t y = 0; y < 2; y++)
             init_big_tile_corner(renderer, rom, ball, palette, x, y);

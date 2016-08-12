@@ -11,9 +11,9 @@ static const map_line hud_lines[] = {
     {0x1E | TYPE_DIAGONAL  , 0x06 | SLOPE_NW, 0x06},
 };
 
-const SDL_Rect hud_back = {2 * TSIZE, 2 * TSIZE, 28 * TSIZE, 4 * TSIZE};
-const SDL_Rect toolbox =  {2 * TSIZE, 2 * TSIZE, 10 * TSIZE, 4 * TSIZE};
-const SDL_Rect stages_area = {13 * TSIZE, 4 * TSIZE, 6 * TSIZE, TSIZE};
+const SDL_Rect hud_back     = TILE_AREA_RECT(2, 2, 28, 4);
+const SDL_Rect toolbox      = TILE_AREA_RECT(2, 2, 10, 4);
+const SDL_Rect stages_area  = TILE_AREA_RECT(13, 4, 6, 1);
 
 size_t in_rect(const SDL_Rect* r, int x, int y) {
     return x >= r->x && y >= r->y && x - r->x < r->w && y - r->y < r->h;
@@ -31,23 +31,22 @@ SDL_Texture* create_texture_frame(SDL_Renderer* renderer, lb_sprites* sprites) {
 }
 
 void render_texture_next(SDL_Renderer* renderer, lb_sprites* sprites) {
-    static const SDL_Rect target = {TSIZE * 8 + 6, TSIZE * 2 + 2, BSIZE, BSIZE};
-    SDL_RenderCopy(renderer, sprites->letters[LETTER('+')], NULL, &target);
+    const SDL_Rect dst = {TILE(8) + 3 * TSCALE, TILE(2) + TSCALE, BSIZE, BSIZE};
+    SDL_RenderCopy(renderer, sprites->letters[LETTER('+')], NULL, &dst);
 }
 
 SDL_Texture* create_texture_balls(SDL_Renderer* renderer, lb_sprites* sprites) {
     SDL_Texture* balls = create_texture(renderer, toolbox.w, toolbox.h);
-    for (size_t i = 0; i < BALL_COUNT; i++) {
-        SDL_Rect target = {(i % 5) * BSIZE, (i / 5) * BSIZE, BSIZE, BSIZE};
-        SDL_RenderCopy(renderer, sprites->balls[i], NULL, &target);
-    }
+    for (size_t i = 0; i < BALL_COUNT; i++)
+        SDL_RenderCopy(renderer, sprites->balls[i], NULL,
+                       &BTILE_RECT(i % 5, i / 5));
     render_texture_next(renderer, sprites);
     return balls;
 }
 
 void render_texture_tool(SDL_Renderer* renderer, SDL_Texture** corners,
                          size_t x, size_t y) {
-    SDL_Rect target = {x + TSIZE, y + TSIZE, TSIZE, TSIZE};
+    SDL_Rect target = TILE_RECT(x + 1, y + 1);
     SDL_RenderCopy(renderer, corners[0], NULL, &target);
     target.x -= TSIZE;
     SDL_RenderCopy(renderer, corners[1], NULL, &target);
@@ -59,21 +58,15 @@ void render_texture_tool(SDL_Renderer* renderer, SDL_Texture** corners,
 
 SDL_Texture* create_texture_tools(SDL_Renderer* renderer, lb_sprites* sprites) {
     SDL_Texture* tools = create_texture(renderer, toolbox.w, toolbox.h);
-    SDL_Rect target = {0, 0, BSIZE, BSIZE};
-    for (size_t i = 0; i < 4; i++) {
+    SDL_Rect target = BTILE_RECT(0, 0);
+    for (size_t i = 0; i < 4; i++, target.x += BSIZE)
         SDL_RenderCopy(renderer, sprites->slopes[16 + i], NULL, &target);
-        target.x += TSIZE * 2;
-    }
     SDL_RenderCopy(renderer, sprites->blocks[2], NULL, &target);
-    target = (SDL_Rect) {0, BSIZE, BSIZE, BSIZE};
-    render_texture_tool(renderer, sprites->slopes, target.x, target.y);
-    target.x += TSIZE * 2;
-    render_texture_tool(renderer, sprites->blocks + 0x20, target.x, target.y);
-    target.x += TSIZE * 2;
-    render_texture_tool(renderer, sprites->holes, target.x, target.y);
-    target.x += TSIZE * 2;
+    render_texture_tool(renderer, sprites->slopes, 0, 2);
+    render_texture_tool(renderer, sprites->blocks + 0x20, 2, 2);
+    render_texture_tool(renderer, sprites->holes, 4, 2);
     set_render_color(renderer, get_color(COLOR_BACK));
-    SDL_RenderFillRect(renderer, &target);
+    SDL_RenderFillRect(renderer, &BTILE_RECT(3, 1));
     render_texture_next(renderer, sprites);
     return tools;
 }

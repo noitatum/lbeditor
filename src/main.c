@@ -7,9 +7,8 @@
 #include <hud.h>
 #include <action.h>
 
-const SDL_Rect map_area = {MAP_MIN_X * TSIZE, MAP_MIN_Y * TSIZE,
-                           (MAP_MAX_X - MAP_MIN_X + 1) * TSIZE,
-                           (MAP_MAX_Y - MAP_MIN_Y + 1) * TSIZE};
+const SDL_Rect map_area = TILE_AREA_RECT(MAP_MIN_X, MAP_MIN_Y,
+                          MAP_MAX_X - MAP_MIN_X + 1, MAP_MAX_Y - MAP_MIN_Y + 1);
 
 typedef struct resources {
     FILE* rom;

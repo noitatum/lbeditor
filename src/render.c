@@ -100,8 +100,8 @@ int random_tile(SDL_Rect* rect, size_t big,
     for (size_t j = y; j <= y + big; j++)
         for (size_t i = x; i <= x + big; i++)
             set[j][i] = 1;
-    rect->x = (x - 1) * TSIZE;
-    rect->y = (y - 1) * TSIZE;
+    rect->x = TILE(x - 1);
+    rect->y = TILE(y - 1);
     return 0;
 }
 
@@ -115,11 +115,11 @@ void render_dust(SDL_Renderer* renderer, lb_sprites* sprites, size_t stage) {
     memset(dust, 0, sizeof(dust));
     set_render_color(renderer, dust_colors[(stage - 1) % 4]);
     SDL_RenderClear(renderer);
-    SDL_Rect dest = (SDL_Rect) {0, 0, TSIZE * 2, TSIZE * 2};
+    SDL_Rect dest = BTILE_RECT(0, 0);
     for (size_t i = 0; i < 10; i++)
         if (!random_tile(&dest, 1, size_x, size_y, dust))
             SDL_RenderCopy(renderer, sprites->crater, NULL, &dest);
-    dest = (SDL_Rect) {0, 0, TSIZE, TSIZE};
+    dest = TILE_RECT(0, 0);
     for (size_t i = 0; i < 100; i++)
         if (!random_tile(&dest, 0, size_x, size_y, dust))
             SDL_RenderCopy(renderer, sprites->dusts[rand() % 2], NULL, &dest);
@@ -132,10 +132,8 @@ void render_back(SDL_Renderer* renderer, map_full* map) {
     set_render_color(renderer, NES_PALETTE[COLOR_BACK]);
     for (size_t i = 0; i < map->back_count; i++) {
         map_back* b = map->backs + i;
-        SDL_Rect rect = {b->x1 * TSIZE, b->y1 * TSIZE,
-                         (b->x2 - b->x1 + 1) * TSIZE,
-                         (b->y2 - b->y1 + 1) * TSIZE};
-        SDL_RenderFillRect(renderer, &rect);
+        SDL_RenderFillRect(renderer, &TILE_AREA_RECT(b->x1, b->y1,
+                           b->x2 - b->x1 + 1, b->y2 - b->y1 + 1));
     }
 }
 
@@ -143,7 +141,7 @@ void render_holes(SDL_Renderer* renderer, map_tiles* tiles,
                   lb_sprites* sprites) {
     for (size_t j = 1; j < GRID_HEIGHT - 1; j++) {
         for (size_t i = 1; i < GRID_WIDTH - 1; i++) {
-            SDL_Rect dest = {i * TSIZE, j * TSIZE, TSIZE, TSIZE};
+            SDL_Rect dest = TILE_RECT(i, j);
             size_t hole = hole_order[tiles->tiles[j][i].hole_flags];
             if (hole != 0xF)
                 SDL_RenderCopy(renderer, sprites->holes[hole], NULL, &dest);
@@ -167,7 +165,7 @@ void render_walls(SDL_Renderer* renderer, map_tiles* tiles,
                   lb_sprites* sprites) {
     for (size_t j = 1; j < GRID_HEIGHT - 1; j++) {
         for (size_t i = 1; i < GRID_WIDTH - 1; i++) {
-            SDL_Rect dest = {i * TSIZE, j * TSIZE, TSIZE, TSIZE};
+            const SDL_Rect dest = TILE_RECT(i, j);
             size_t type = type_table[tiles->tiles[j][i].wall_flags];
             if (!type)
                 continue;
@@ -193,8 +191,8 @@ void render_balls(SDL_Renderer* renderer, stage_ball* balls,
     for (size_t i = 0; i < BALL_COUNT; i++) {
         if (balls[i].x == 0)
             continue;
-        SDL_Rect dest = {balls[i].x * 2 - TSIZE, (balls[i].y + 1) * 2 - TSIZE,
-                         BSIZE, BSIZE};
+        SDL_Rect dest = {balls[i].x * TSCALE - TSIZE,
+                         (balls[i].y + 1) * TSCALE - TSIZE, BSIZE, BSIZE};
         SDL_RenderCopy(renderer, sprites->balls[i], NULL, &dest);
     }
 }
@@ -209,9 +207,9 @@ void render_hud(SDL_Renderer* renderer, lb_hud* hud,
     else
         SDL_RenderCopy(renderer, hud->balls, NULL, &toolbox);
     // Render stage lights
-    SDL_Rect light_box = {TSIZE * 15, TSIZE * 4, TSIZE, TSIZE};
+    SDL_Rect light_box = TILE_RECT(15, 4);
     SDL_RenderCopy(renderer, sprites->lights[hud->stage_b], NULL, &light_box);
-    light_box.x += TSIZE * 3;
+    light_box.x += TILE(3);
     SDL_RenderCopy(renderer, sprites->lights[!hud->stage_b], NULL, &light_box);
     // Render hud information
     printf_pos(renderer, sprites, 13, 2, "map %02i byte %i\nstages line %i\n"
@@ -219,8 +217,8 @@ void render_hud(SDL_Renderer* renderer, lb_hud* hud,
         map->line_count, map->stages[0], map->stages[1],
         map->hole_count, map->back_count);
     // Render selected tool outline
-    SDL_Rect selected = {BSIZE * (hud->tool % 5) + toolbox.x,
-                         BSIZE * (hud->tool / 5) + toolbox.y, BSIZE, BSIZE};
+    SDL_Rect selected = {BTILE(hud->tool % 5) + toolbox.x,
+                         BTILE(hud->tool / 5) + toolbox.y, BSIZE, BSIZE};
     SDL_SetRenderDrawColor(renderer, 0xFF, 0x00, 0x00, 0xFF);
     SDL_RenderDrawRect(renderer, &selected);
 }
@@ -280,10 +278,10 @@ void printf_pos(SDL_Renderer* renderer, lb_sprites* sprites,
     va_start(l, format);
     vsnprintf(buffer, GRID_WIDTH * GRID_HEIGHT, format, l);
     va_end(l);
-    SDL_Rect target = {x * TSIZE, y * TSIZE, TSIZE, TSIZE};
+    SDL_Rect target = TILE_RECT(x, y);
     for (size_t i = 0; i < GRID_WIDTH * GRID_HEIGHT && buffer[i]; i++) {
         if (buffer[i] == '\n') {
-            target.x = x * TSIZE;
+            target.x = TILE(x);
             target.y += TSIZE;
             continue;
         }
