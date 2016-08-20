@@ -165,7 +165,9 @@ void map_add_line(map_full* map, map_tiles* tiles, const map_line* line,
     map->lines[map->line_count] = map->lines[index];
     map->lines[index] = *line;
     tile_map_line(tiles, line, 1);
-    map->byte_count += sizeof(map_line) - ((line->x & TYPE_BODY) == TYPE_BODY);
+    map->byte_count -= (line->x & TYPE_BODY) == TYPE_BODY;
+    if (map->line_count)
+        map->byte_count += sizeof(map_line);
     map->line_count++;
 }
 
@@ -225,8 +227,9 @@ void map_add_hole(map_full* map, map_tiles* tiles, map_hole* hole,
     map->holes[map->hole_count] = map->holes[index];
     map->holes[index] = *hole;
     tile_map_hole(tiles, hole, 1);
+    if (map->hole_count)
+        map->byte_count += sizeof(map_hole);
     map->hole_count++;
-    map->byte_count += sizeof(map_hole);
 }
 
 int map_add_hole_action(map_full* map, map_tiles* tiles, size_t x, size_t y) {
@@ -240,8 +243,9 @@ int map_add_hole_action(map_full* map, map_tiles* tiles, size_t x, size_t y) {
 void map_add_back(map_full* map, map_back* back, size_t index) {
     map->backs[map->back_count] = map->backs[index];
     map->backs[index] = *back;
+    if (map->back_count)
+        map->byte_count += sizeof(map_back);
     map->back_count++;
-    map->byte_count += sizeof(map_back);
 }
 
 int map_add_back_action(map_full* map, size_t x1, size_t y1,
@@ -261,22 +265,25 @@ int map_add_back_action(map_full* map, size_t x1, size_t y1,
 
 void map_remove_line(map_full* map, map_tiles* tiles, size_t index) {
     map->line_count--;
-    map->byte_count -= sizeof(map_line) -
-        ((map->lines[index].x & TYPE_BODY) == TYPE_BODY);
+    map->byte_count += (map->lines[index].x & TYPE_BODY) == TYPE_BODY;
+    if (map->line_count)
+        map->byte_count -= sizeof(map_line);
     tile_map_line(tiles, map->lines + index, -1);
     map->lines[index] = map->lines[map->line_count];
 }
 
 void map_remove_hole(map_full* map, map_tiles* tiles, size_t index) {
     map->hole_count--;
-    map->byte_count -= sizeof(map_hole);
+    if (map->hole_count)
+        map->byte_count -= sizeof(map_hole);
     tile_map_hole(tiles, map->holes + index, -1);
     map->holes[index] = map->holes[map->hole_count];
 }
 
 void map_remove_back(map_full* map, size_t index) {
     map->back_count--;
-    map->byte_count -= sizeof(map_back);
+    if (map->back_count)
+        map->byte_count -= sizeof(map_back);
     map->backs[index] = map->backs[map->back_count];
 }
 
@@ -333,10 +340,12 @@ int map_find_back(map_full* map, size_t bx, size_t by) {
 }
 
 void map_clear(map_full* map, map_tiles* tiles) {
-    uintptr_t start = (uintptr_t) &map->byte_count;
+    uintptr_t start = (uintptr_t) &map->line_count;
     uintptr_t end = (uintptr_t) (map + 1);
     memset((void*) start, 0, end - start);
     memset(tiles, 0, sizeof(map_tiles));
+    // Size of empty map in bytes
+    map->byte_count = sizeof(map_line) + sizeof(map_hole) + sizeof(map_back);
 }
 
 void tile_map_lines(map_tiles* tiles, const map_line* lines,
