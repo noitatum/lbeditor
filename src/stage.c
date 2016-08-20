@@ -349,7 +349,7 @@ void map_clear(map_full* map, map_tiles* tiles) {
 }
 
 void tile_map_lines(map_tiles* tiles, const map_line* lines,
-                      size_t count) {
+                    size_t count) {
     for (size_t i = 0; i < count; i++)
         tile_map_line(tiles, lines + i, 1);
 }

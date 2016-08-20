@@ -80,8 +80,6 @@ static const u8 type_table[32] = {
     0xF, 0xF, 0xF, 0xF, 0xF, 0xF, 0xF, 0xF,
 };
 
-const SDL_Rect screen_area = {0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
-
 rgba_color get_color(u8 color) {
     return NES_PALETTE[color & 0x3F];
 }
@@ -191,17 +189,17 @@ void render_balls(SDL_Renderer* renderer, stage_ball* balls,
     for (size_t i = 0; i < BALL_COUNT; i++) {
         if (balls[i].x == 0)
             continue;
-        SDL_Rect dest = {balls[i].x * TSCALE - TSIZE,
-                         (balls[i].y + 1) * TSCALE - TSIZE, BSIZE, BSIZE};
+        SDL_Rect dest = {balls[i].x - TSIZE, (balls[i].y + 1) - TSIZE,
+                         BSIZE, BSIZE};
         SDL_RenderCopy(renderer, sprites->balls[i], NULL, &dest);
     }
 }
 
 void render_hud(SDL_Renderer* renderer, lb_hud* hud,
                 lb_sprites* sprites, map_full* map) {
-    extern const SDL_Rect toolbox;
+    extern const SDL_Rect toolbox, map_area;
     // Render toolbox
-    SDL_RenderCopy(renderer, hud->frame, NULL, &screen_area);
+    SDL_RenderCopy(renderer, hud->frame, NULL, NULL);
     if (hud->toolbox == TOOLBOX_MAP)
         SDL_RenderCopy(renderer, hud->tools, NULL, &toolbox);
     else
@@ -221,6 +219,9 @@ void render_hud(SDL_Renderer* renderer, lb_hud* hud,
                          BTILE(hud->tool / 5) + toolbox.y, BSIZE, BSIZE};
     SDL_SetRenderDrawColor(renderer, 0xFF, 0x00, 0x00, 0xFF);
     SDL_RenderDrawRect(renderer, &selected);
+    // Render map area outline
+    SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
+    SDL_RenderDrawRect(renderer, &map_area);
 }
 
 void render_invalid(lb_render* render, lb_sprites* sprites, map_full* map,
@@ -262,12 +263,9 @@ void render_invalid(lb_render* render, lb_sprites* sprites, map_full* map,
 }
 
 void render_present(lb_render* render) {
-    extern const SDL_Rect map_area;
     SDL_SetRenderTarget(render->renderer, NULL);
     for (size_t i = 0; i < LAYER_COUNT; i++)
-        SDL_RenderCopy(render->renderer, render->layers[i], NULL, &screen_area);
-    SDL_SetRenderDrawColor(render->renderer, 0xFF, 0xFF, 0xFF, 0xFF);
-    SDL_RenderDrawRect(render->renderer, &map_area);
+        SDL_RenderCopy(render->renderer, render->layers[i], NULL, NULL);
     SDL_RenderPresent(render->renderer);
 }
 

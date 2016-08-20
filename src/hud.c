@@ -31,7 +31,7 @@ SDL_Texture* create_texture_frame(SDL_Renderer* renderer, lb_sprites* sprites) {
 }
 
 void render_texture_next(SDL_Renderer* renderer, lb_sprites* sprites) {
-    const SDL_Rect dst = {TILE(8) + 3 * TSCALE, TILE(2) + TSCALE, BSIZE, BSIZE};
+    const SDL_Rect dst = {TILE(8) + 3, TILE(2) + 1, BSIZE, BSIZE};
     SDL_RenderCopy(renderer, sprites->letters[LETTER('+')], NULL, &dst);
 }
 

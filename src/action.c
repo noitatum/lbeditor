@@ -9,7 +9,7 @@ void history_apply(history* history, map_full* map, map_tiles* tiles,
     size_t layer = 0, tool = action->tool;
     int index = 0;
     if (IS_TOOL_BALL(tool)) {
-        size_t x = action->x2 / TSCALE, y = action->y2 / TSCALE;
+        size_t x = action->x2, y = action->y2;
         index = tool - TOOL_BALL_0;
         action->ball = map->balls[action->stage_b][index];
         if (action->remove)

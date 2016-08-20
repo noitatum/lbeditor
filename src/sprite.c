@@ -38,15 +38,15 @@ SDL_Texture* create_texture(SDL_Renderer* renderer, size_t x, size_t y) {
 
 SDL_Texture* create_texture_tile(SDL_Renderer* renderer, FILE* rom,
                                  rgba_palette palette) {
-    SDL_Texture* tte = create_texture(renderer, TILE_SIZE, TILE_SIZE);
+    SDL_Texture* tte = create_texture(renderer, TSIZE, TSIZE);
     u64 data1, data2;
     fread(&data1, sizeof(data1), 1, rom);
     fread(&data2, sizeof(data2), 1, rom);
-    for (size_t i = 0; i < TILE_SIZE; i++)
-        for (size_t j = 0; j < TILE_SIZE; j++) {
+    for (size_t i = 0; i < TSIZE; i++)
+        for (size_t j = 0; j < TSIZE; j++) {
             u8 palette_index = (data1 & 1) + ((data2 & 1) << 1);
             set_render_color(renderer, palette.color[palette_index]);
-            SDL_RenderDrawPoint(renderer, TILE_SIZE - j - 1, i);
+            SDL_RenderDrawPoint(renderer, TSIZE - j - 1, i);
             data1 >>= 1;
             data2 >>= 1;
         }
@@ -55,7 +55,7 @@ SDL_Texture* create_texture_tile(SDL_Renderer* renderer, FILE* rom,
 
 void init_big_tile_corner(SDL_Renderer* renderer, FILE* rom, SDL_Texture* big,
                           rgba_palette palette, size_t x, size_t y) {
-    SDL_Rect dst = {x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE};
+    SDL_Rect dst = {x * TSIZE, y * TSIZE, TSIZE, TSIZE};
     SDL_Texture* corner = create_texture_tile(renderer, rom, palette);
     SDL_SetRenderTarget(renderer, big);
     SDL_RenderCopy(renderer, corner, NULL, &dst);
@@ -64,7 +64,7 @@ void init_big_tile_corner(SDL_Renderer* renderer, FILE* rom, SDL_Texture* big,
 
 SDL_Texture* create_texture_crater(SDL_Renderer* renderer, FILE* rom,
                                    rgba_palette palette) {
-    SDL_Texture* crater = create_texture(renderer, BTILE_SIZE, BTILE_SIZE);
+    SDL_Texture* crater = create_texture(renderer, BSIZE, BSIZE);
     init_big_tile_corner(renderer, rom, crater, palette, 1, 1);
     init_big_tile_corner(renderer, rom, crater, palette, 0, 1);
     init_big_tile_corner(renderer, rom, crater, palette, 0, 0);
@@ -74,7 +74,7 @@ SDL_Texture* create_texture_crater(SDL_Renderer* renderer, FILE* rom,
 
 SDL_Texture* create_texture_ball(SDL_Renderer* renderer, FILE* rom,
                                  rgba_palette palette) {
-    SDL_Texture* ball = create_texture(renderer, BTILE_SIZE, BTILE_SIZE);
+    SDL_Texture* ball = create_texture(renderer, BSIZE, BSIZE);
     for (size_t x = 0; x < 2; x++)
         for (size_t y = 0; y < 2; y++)
             init_big_tile_corner(renderer, rom, ball, palette, x, y);

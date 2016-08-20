@@ -6,11 +6,7 @@
 #include <hud.h>
 #include <integer.h>
 
-// TSCALE is how much we scale tiles, can be changed
-#define TSCALE          2
-#define TILE_SIZE       8
-#define BTILE_SIZE      (TILE_SIZE * 2)
-#define TSIZE           (TILE_SIZE * TSCALE)
+#define TSIZE           8
 #define BSIZE           (TSIZE * 2)
 #define SCREEN_WIDTH    (TSIZE * GRID_WIDTH)
 #define SCREEN_HEIGHT   (TSIZE * GRID_HEIGHT)

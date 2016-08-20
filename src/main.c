@@ -20,6 +20,11 @@ typedef struct resources {
     history_table* history;
 } resources;
 
+typedef struct ui_vars {
+    size_t active_action;
+    float scale_x, scale_y;
+} ui_vars;
+
 SDL_Window* initialize_sdl() {
     // Try to initialize SDL
     if (SDL_Init(SDL_INIT_VIDEO))
@@ -27,7 +32,7 @@ SDL_Window* initialize_sdl() {
     // Try to initialize the window
     return SDL_CreateWindow("Moon Editor",
                             SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-                            SCREEN_WIDTH, SCREEN_HEIGHT, 0);
+                            SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_RESIZABLE);
 }
 
 void resources_destroy(resources* res) {
@@ -71,8 +76,7 @@ void exit_error(resources* res) {
     exit(EXIT_FAILURE);
 }
 
-void handle_event(SDL_Event* e, resources* r, map_tiles* tiles,
-                  size_t* active_action) {
+void handle_event(SDL_Event* e, resources* r, map_tiles* tiles, ui_vars* vars) {
     map_full* map = r->stages->maps + r->hud->map;
     history* history = r->history->table + r->hud->map;
     size_t* inv = &r->render->invalid_layers;
@@ -82,12 +86,12 @@ void handle_event(SDL_Event* e, resources* r, map_tiles* tiles,
         // If table changed retile
         if (map != r->stages->maps + r->hud->map) {
             init_map_tiles(tiles, r->stages->maps + r->hud->map);
-            *active_action = 0;
+            vars->active_action = 0;
         }
         if (key == SDLK_u) {
             // Undo action
             history_undo(history, map, tiles, inv);
-            *active_action = 0;
+            vars->active_action = 0;
         } else if (key == SDLK_DELETE) {
             // Delete map
             map_clear(map, tiles);
@@ -95,32 +99,36 @@ void handle_event(SDL_Event* e, resources* r, map_tiles* tiles,
             *inv |= LAYER_FLAGS_ALL & ~(1 << LAYER_DUST);
         }
     } else if (e->type == SDL_MOUSEBUTTONDOWN) {
-        size_t x = e->button.x, y = e->button.y;
+        size_t x = e->button.x / vars->scale_x, y = e->button.y / vars->scale_y;
         size_t stage_b = r->hud->stage_b, tool = hud_tool(r->hud);
         if (e->button.button == SDL_BUTTON_LEFT) {
             if (in_rect(&map_area, x, y)) {
                 history_do(history, map, tiles, stage_b, tool, x, y, 0, inv);
-                *active_action = 1;
+                vars->active_action = 1;
             } else {
                 hud_click(r->hud, x, y, inv);
             }
         } else if (e->button.button == SDL_BUTTON_RIGHT) {
             if (in_rect(&map_area, x, y)) {
                 history_do(history, map, tiles, stage_b, tool, x, y, 1, inv);
-                *active_action = 1;
+                vars->active_action = 1;
             }
         } else if (e->button.button == SDL_BUTTON_MIDDLE) {
             history_undo(history, map, tiles, inv);
-            *active_action = 0;
+            vars->active_action = 0;
         }
     } else if (e->type == SDL_MOUSEMOTION) {
-        size_t x = e->motion.x, y = e->motion.y;
-        if (*active_action && in_rect(&map_area, x, y))
+        size_t x = e->motion.x / vars->scale_x, y = e->motion.y / vars->scale_y;
+        if (vars->active_action && in_rect(&map_area, x, y))
             history_redo(history, map, tiles, x, y, inv);
     } else if (e->type == SDL_MOUSEBUTTONUP) {
         if (e->button.button == SDL_BUTTON_LEFT ||
             e->button.button == SDL_BUTTON_RIGHT)
-            *active_action = 0;
+            vars->active_action = 0;
+    } else if (e->type == SDL_WINDOWEVENT &&
+               e->window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {
+        vars->scale_x = (float) e->window.data1 / SCREEN_WIDTH;
+        vars->scale_y = (float) e->window.data2 / SCREEN_HEIGHT;
     }
 }
 
@@ -146,20 +154,20 @@ int main(int argc, char* argv[]) {
        return EXIT_FAILURE;
     }
     FILE* rom;
-    resources r;
     if (!(rom = fopen(argv[1], "rb"))) {
         fprintf(stderr, "Couldn't open file %s\n", argv[1]);
         return EXIT_FAILURE;
     }
+    resources r;
     if (resources_init(&r, rom))
         exit_error(&r);
-    size_t active_action = 0;
-    map_tiles tiles;
+    ui_vars vars = {0, 1.0, 1.0};
     SDL_Event e = {0};
+    map_tiles tiles;
     init_map_tiles(&tiles, r.stages->maps);
     while (e.type != SDL_QUIT) {
         SDL_WaitEvent(&e);
-        handle_event(&e, &r, &tiles, &active_action);
+        handle_event(&e, &r, &tiles, &vars);
         map_full* map = r.stages->maps + r.hud->map;
         render_invalid(r.render, r.sprites, map, r.hud, &tiles);
         render_present(r.render);
