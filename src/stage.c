@@ -18,7 +18,8 @@ void map_init(FILE* rom, map_full* map) {
             fread(&(line->end), 1, 1, rom);
         if (line->x & MAP_END_BIT) {
             line->x ^= MAP_END_BIT;
-            i++;
+            if (line->x)
+                i++;
             break;
         }
     }
@@ -27,7 +28,8 @@ void map_init(FILE* rom, map_full* map) {
         fread(map->backs + i, sizeof(map_back), 1, rom);
         if (map->backs[i].x1 & MAP_END_BIT) {
             map->backs[i].x1 ^= MAP_END_BIT;
-            i++;
+            if (map->backs[i].x1)
+                i++;
             break;
         }
     }
@@ -36,7 +38,8 @@ void map_init(FILE* rom, map_full* map) {
         fread(map->holes + i, sizeof(map_hole), 1, rom);
         if (map->holes[i].x & MAP_END_BIT) {
             map->holes[i].x ^= MAP_END_BIT;
-            i++;
+            if (map->holes[i].x)
+                i++;
             break;
         }
     }
@@ -75,16 +78,22 @@ void map_write(map_full* map, FILE* rom) {
             fwrite(line, ((line->x & TYPE_MASK) == TYPE_BODY) ? 2 : 3, 1, rom);
         }
         map->lines[map->line_count - 1].x ^= MAP_END_BIT;
+    } else {
+        fwrite(&(map_line){MAP_END_BIT, 0, 0}, sizeof(map_line), 1, rom);
     }
     if (map->back_count) {
         map->backs[map->back_count - 1].x1 |= MAP_END_BIT;
         fwrite(map->backs, sizeof(map_back), map->back_count, rom);
         map->backs[map->back_count - 1].x1 ^= MAP_END_BIT;
+    } else {
+        fwrite(&(map_back){MAP_END_BIT, 0, 0, 0}, sizeof(map_back), 1, rom);
     }
     if (map->hole_count) {
         map->holes[map->hole_count - 1].x |= MAP_END_BIT;
         fwrite(map->holes, sizeof(map_hole), map->hole_count, rom);
         map->holes[map->hole_count - 1].x ^= MAP_END_BIT;
+    } else {
+        fwrite(&(map_hole){MAP_END_BIT, 0}, sizeof(map_hole), 1, rom);
     }
 }
 

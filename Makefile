@@ -1,3 +1,7 @@
+# No default suffixes
+.SUFFIXES:
+# These targets are not files
+.PHONY: all windows clean debug
 # Compiler
 CC = gcc
 # Compiler flags
