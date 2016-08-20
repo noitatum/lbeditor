@@ -5,11 +5,11 @@ A GPLv3 licensed level editor for the Famicom game Lunar Ball written in C/SDL.
 
 ## Linux
 
-Install the SDL2 development package of your distro (For example in Debian based distros `libsdl2-dev`). Then just type `make` at the repository root directory. The executable will be at `bin/moon`. You can also compile for debugging using `make debug`, it will remove optimizations and add debugging symbols for tools like `gdb`.
+Install the SDL2 development package of your distro (For example in Debian based distros `libsdl2-dev`). Then just type `make` at the repository root directory. The executable will be at `bin/lbeditor`. You can also compile for debugging using `make debug`, it will remove optimizations and add debugging symbols for tools like `gdb`.
 
 ## For Windows from Linux
 
-Install mingw-w64 targeting i686 compiler. Download [SDL2 development libraries for mingw](https://www.libsdl.org/download-2.0.php) and extract at the repository root directory. Name the extracted directory `SDL2` or modify the `SDL2_MINGW_DIR` variable at the `Makefile`. Then just type `make windows`. The executable will be at `bin/moon.exe`.
+Install mingw-w64 targeting i686 compiler. Download [SDL2 development libraries for mingw](https://www.libsdl.org/download-2.0.php) and extract at the repository root directory. Name the extracted directory `SDL2` or modify the `SDL2_MINGW_DIR` variable at the `Makefile`. Then just type `make windows`. The executable will be at `bin/lbeditor.exe`.
 
 ## For Windows From Windows
 

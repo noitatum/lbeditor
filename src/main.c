@@ -30,7 +30,7 @@ SDL_Window* initialize_sdl() {
     if (SDL_Init(SDL_INIT_VIDEO))
         return NULL;
     // Try to initialize the window
-    return SDL_CreateWindow("Moon Editor",
+    return SDL_CreateWindow("Lunar Ball Editor",
                             SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
                             SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_RESIZABLE);
 }
@@ -150,7 +150,7 @@ FILE* create_output_file(FILE* src) {
 
 int main(int argc, char* argv[]) {
     if (argc != 2) {
-       fprintf(stderr, "Usage moon <Lunar Ball Rom>\n");
+       fprintf(stderr, "Usage: lbeditor <Lunar Ball Rom>\n");
        return EXIT_FAILURE;
     }
     FILE* rom;
