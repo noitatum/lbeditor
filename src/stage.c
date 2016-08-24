@@ -105,9 +105,11 @@ void stages_write(lb_stages* stages, FILE* rom) {
     fwrite(stages->balls, sizeof(stages->balls), 1, rom);
     // Write the maps, until we run out of space
     fseek(rom, ROM_MAP_DATA_START, SEEK_SET);
-    for (size_t i = 0, bytes = ROM_MAP_DATA_BYTES; i < MAP_COUNT; i++) {
-        if (stages->maps[i].byte_count > bytes)
-            break;
+    // Write a default offset for all levels in case we don't write them all
+    for (size_t i = 0, offset = ftell(rom) + ROM_RAM_OFFSET; i < MAP_COUNT; i++)
+        map_table[i] = offset;
+    for (size_t i = 0, bytes = ROM_MAP_DATA_BYTES;
+         i < MAP_COUNT && stages->maps[i].byte_count <= bytes; i++) {
         bytes -= stages->maps[i].byte_count;
         map_table[i] = ftell(rom) + ROM_RAM_OFFSET;
         map_write(stages->maps + i, rom);
