@@ -290,10 +290,11 @@ void printf_pos(SDL_Renderer* renderer, lb_sprites* sprites,
 }
 
 lb_render* render_init(SDL_Window* window) {
-    lb_render* render = malloc(sizeof(lb_render));
     SDL_Renderer* re = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
-    if (!(render->renderer = re))
+    if (!re)
         return NULL;
+    lb_render* render = malloc(sizeof(lb_render));
+    render->renderer = re;
     SDL_SetRenderDrawBlendMode(re, SDL_BLENDMODE_BLEND);
     // FIXME: Why is this needed?
     // First sprite won't load properly without drawing a non transparent point
@@ -306,7 +307,7 @@ lb_render* render_init(SDL_Window* window) {
 }
 
 void render_destroy(lb_render* render) {
-    SDL_DestroyRenderer(render->renderer);
     for (size_t i = 0; i < LAYER_COUNT; i++)
         SDL_DestroyTexture(render->layers[i]);
+    SDL_DestroyRenderer(render->renderer);
 }
